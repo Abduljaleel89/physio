@@ -1,0 +1,396 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  patientProfile    Patient?
+  doctorProfile     Doctor?
+  createdAppointments Appointment[] @relation("AppointmentCreatedBy")
+  createdInvoices   Invoice[]       @relation("InvoiceCreatedBy")
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  verificationTokens VerificationToken[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Patient {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @unique
+  regNumber   String    @unique
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?
+  phone       String?
+  address     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  therapyPlans    TherapyPlan[]
+  visitRequests   VisitRequest[]
+  appointments    Appointment[]
+  uploadedFiles   Upload[]
+  invoices        Invoice[]
+
+  @@index([regNumber])
+  @@index([userId])
+}
+
+model Doctor {
+  id            Int       @id @default(autoincrement())
+  userId        Int       @unique
+  firstName     String
+  lastName      String
+  licenseNumber String?   @unique
+  specialization String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  therapyPlans    TherapyPlan[]
+  appointments    Appointment[]    @relation("AssignedDoctor")
+
+  @@index([userId])
+  @@index([licenseNumber])
+}
+
+model Exercise {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  instructions String?
+  difficulty  ExerciseDifficulty @default(BEGINNER)
+  duration    Int?      // in minutes
+  videoUrl    String?
+  imageUrl    String?
+  archived    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  therapyPlanExercises TherapyPlanExercise[]
+
+  @@index([name])
+  @@index([difficulty])
+  @@index([archived])
+}
+
+model TherapyPlan {
+  id          Int                  @id @default(autoincrement())
+  patientId   Int
+  doctorId    Int
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  status      TherapyPlanStatus   @default(ACTIVE)
+  version     Int                  @default(1)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  // Relations
+  patient           Patient                @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor            Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  exercises         TherapyPlanExercise[]
+  invoices          Invoice[]
+  versions          TherapyPlanVersion[]
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  @@index([version])
+}
+
+model TherapyPlanExercise {
+  id            Int       @id @default(autoincrement())
+  therapyPlanId Int
+  exerciseId    Int
+  order         Int       @default(0)
+  reps          Int?
+  sets          Int?
+  duration      Int?      // in minutes
+  frequency     String?   // e.g., "daily", "3x per week"
+  notes         String?
+  archived      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  therapyPlan     TherapyPlan     @relation(fields: [therapyPlanId], references: [id], onDelete: Cascade)
+  exercise        Exercise        @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  completionEvents CompletionEvent[]
+
+  @@unique([therapyPlanId, exerciseId, order])
+  @@index([therapyPlanId])
+  @@index([exerciseId])
+  @@index([archived])
+}
+
+model TherapyPlanVersion {
+  id            Int       @id @default(autoincrement())
+  therapyPlanId Int
+  version       Int
+  summary       String?   // Summary of changes
+  createdBy     Int?      // userId
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  therapyPlan   TherapyPlan   @relation(fields: [therapyPlanId], references: [id], onDelete: Cascade)
+
+  @@index([therapyPlanId])
+  @@index([version])
+}
+
+model CompletionEvent {
+  id                    Int       @id @default(autoincrement())
+  therapyPlanExerciseId Int
+  mediaUploadId         Int?
+  completedAt           DateTime  @default(now())
+  notes                 String?
+  painLevel             Int?      // 1-10 scale
+  satisfaction          Int?      // 1-5 scale
+  undone                Boolean   @default(false)
+  undoneAt              DateTime?
+  undoneReason          String?
+  undoneBy              Int?      // userId who undid it
+  createdAt             DateTime  @default(now())
+
+  // Relations
+  therapyPlanExercise TherapyPlanExercise @relation(fields: [therapyPlanExerciseId], references: [id], onDelete: Cascade)
+  mediaUpload          Upload?            @relation(fields: [mediaUploadId], references: [id], onDelete: SetNull)
+
+  @@index([therapyPlanExerciseId])
+  @@index([completedAt])
+  @@index([undone])
+}
+
+model VisitRequest {
+  id          Int                  @id @default(autoincrement())
+  patientId   Int
+  requestedDate DateTime
+  reason      String?
+  status      VisitRequestStatus   @default(PENDING)
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  // Relations
+  patient       Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment   Appointment?
+
+  @@index([patientId])
+  @@index([status])
+  @@index([requestedDate])
+}
+
+model Appointment {
+  id             Int                @id @default(autoincrement())
+  patientId      Int
+  doctorId       Int
+  createdById    Int
+  visitRequestId Int?               @unique
+  date           DateTime
+  duration       Int                @default(60) // in minutes
+  status         AppointmentStatus  @default(SCHEDULED)
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  // Relations
+  patient       Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor        Doctor             @relation("AssignedDoctor", fields: [doctorId], references: [id], onDelete: Restrict)
+  createdBy     User               @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  visitRequest  VisitRequest?      @relation(fields: [visitRequestId], references: [id], onDelete: SetNull)
+  invoice       Invoice?
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([createdById])
+  @@index([date])
+  @@index([status])
+}
+
+model Upload {
+  id          Int       @id @default(autoincrement())
+  patientId   Int?
+  fileName    String
+  filePath    String
+  fileType    String
+  fileSize    Int?      // in bytes
+  entityType  String?   // e.g., "patient", "exercise", "invoice"
+  entityId    Int?
+  uploadedBy  Int?      // userId
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  patient     Patient?  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  completionEvents CompletionEvent[]
+
+  @@index([patientId])
+  @@index([entityType, entityId])
+}
+
+model Invoice {
+  id            Int             @id @default(autoincrement())
+  patientId     Int
+  therapyPlanId Int?
+  appointmentId Int?            @unique
+  createdById   Int
+  invoiceNumber String          @unique
+  amount        Decimal         @db.Decimal(10, 2)
+  amountCents   Int?            // Amount in cents for precision
+  currency      String          @default("USD")
+  status        InvoiceStatus   @default(PENDING)
+  dueDate       DateTime?
+  paidDate      DateTime?
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  patient      Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapyPlan  TherapyPlan?     @relation(fields: [therapyPlanId], references: [id], onDelete: SetNull)
+  appointment  Appointment?     @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  createdBy    User             @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([invoiceNumber])
+  @@index([status])
+  @@index([dueDate])
+  @@index([patientId])
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  title     String?
+  message   String?
+  type      NotificationType   @default(INFO)
+  payload   String?            // JSON string for additional data
+  read      Boolean            @default(false)
+  readAt    DateTime?
+  createdAt DateTime           @default(now())
+
+  // Relations
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         Int       @id @default(autoincrement())
+  userId     Int?
+  entityType String
+  entityId   Int?
+  action     String    // e.g., "CREATE", "UPDATE", "DELETE"
+  changes    String?   // JSON string of changes
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model VerificationToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  type      VerificationType @default(EMAIL_VERIFICATION)
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// Enums
+enum Role {
+  ADMIN
+  RECEPTIONIST
+  PHYSIOTHERAPIST
+  ASSISTANT
+  PATIENT
+}
+
+enum ExerciseDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum TherapyPlanStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum VisitRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  APPOINTMENT
+  INVOICE
+}
+
+enum VerificationType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
