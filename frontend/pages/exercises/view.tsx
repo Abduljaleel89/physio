@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useAuth } from '../../lib/auth';
 import Layout from '../../components/Layout';
 import { exercisesApi, completionEventsApi, therapyPlansApi } from '../../lib/api';
