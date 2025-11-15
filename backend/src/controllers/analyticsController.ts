@@ -20,7 +20,8 @@ export async function getAdherenceAnalytics(req: AuthenticatedRequest, res: Resp
     }
 
     // Check permissions: only admin and doctor can view analytics
-    if (![Role.ADMIN, Role.PHYSIOTHERAPIST].includes(req.user.role)) {
+    const allowedRoles: Role[] = [Role.ADMIN, Role.PHYSIOTHERAPIST];
+    if (!allowedRoles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
         error: "Access denied. Admin or Physiotherapist role required",

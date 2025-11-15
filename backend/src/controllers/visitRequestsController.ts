@@ -298,7 +298,8 @@ export async function assignVisitRequest(req: AuthenticatedRequest, res: Respons
     }
 
     // Only admin and receptionist can assign
-    if (![Role.ADMIN, Role.RECEPTIONIST].includes(req.user.role)) {
+    const allowedRoles: Role[] = [Role.ADMIN, Role.RECEPTIONIST];
+    if (!allowedRoles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
         error: "Only admin and receptionist can assign visit requests",

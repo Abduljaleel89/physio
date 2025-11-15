@@ -30,7 +30,8 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
 
     // ownership check: patient can only create for themselves unless role elevated
     if (authUser.role === 'PATIENT' && authUser.id !== patientId && authUser.userId !== patientId) {
-      return res.status(403).json({ success: false, error: 'Forbidden' });
+      res.status(403).json({ success: false, error: 'Forbidden' });
+      return;
     }
 
     let { exerciseId, therapyPlanId, therapyPlanExerciseId, painRating, painLevel, note, notes, mediaUploadId: bodyMediaUploadId } = req.body;
@@ -74,7 +75,7 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
     }
 
     // Check permissions: patient can only create completions for themselves
-    if (req.user.role === Role.PATIENT) {
+    if (req.user && req.user.role === Role.PATIENT) {
       if (patient.userId !== req.user.id) {
         res.status(403).json({
           success: false,
@@ -304,8 +305,17 @@ export async function undoCompletionEvent(req: AuthenticatedRequest, res: Respon
       return;
     }
 
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+      return;
+    }
+
     const isPatient = req.user.role === Role.PATIENT;
-    const isStaff = [Role.ADMIN, Role.PHYSIOTHERAPIST, Role.RECEPTIONIST].includes(req.user.role);
+    const allowedStaffRoles: Role[] = [Role.ADMIN, Role.PHYSIOTHERAPIST, Role.RECEPTIONIST];
+    const isStaff = allowedStaffRoles.includes(req.user.role);
 
     // Check permissions
     if (isPatient) {

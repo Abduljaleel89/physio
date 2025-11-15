@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { Role } from "@prisma/client";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
@@ -18,7 +18,7 @@ export interface JWTPayload {
 export function generateToken(payload: JWTPayload): string {
   return jwt.sign(payload, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
-  });
+  } as SignOptions);
 }
 
 /**

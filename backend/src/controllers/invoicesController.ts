@@ -28,7 +28,8 @@ export async function createInvoice(req: AuthenticatedRequest, res: Response): P
     }
 
     // Only admin and receptionist can create invoices
-    if (![Role.ADMIN, Role.RECEPTIONIST].includes(req.user.role)) {
+    const allowedRoles: Role[] = [Role.ADMIN, Role.RECEPTIONIST];
+    if (!allowedRoles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
         error: "Only admin and receptionist can create invoices",
@@ -264,7 +265,8 @@ export async function updateInvoice(req: AuthenticatedRequest, res: Response): P
     }
 
     // Only admin and receptionist can update invoices
-    if (![Role.ADMIN, Role.RECEPTIONIST].includes(req.user.role)) {
+    const allowedRoles: Role[] = [Role.ADMIN, Role.RECEPTIONIST];
+    if (!allowedRoles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
         error: "Only admin and receptionist can update invoices",
@@ -341,7 +343,8 @@ export async function voidInvoice(req: AuthenticatedRequest, res: Response): Pro
     }
 
     // Only admin and receptionist can void invoices
-    if (![Role.ADMIN, Role.RECEPTIONIST].includes(req.user.role)) {
+    const allowedRoles: Role[] = [Role.ADMIN, Role.RECEPTIONIST];
+    if (!allowedRoles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
         error: "Only admin and receptionist can void invoices",

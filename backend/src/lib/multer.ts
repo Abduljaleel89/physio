@@ -1,6 +1,6 @@
 // backend/src/lib/multer.ts
 
-import multer from 'multer';
+import multer, { FileFilterCallback } from 'multer';
 
 import path from 'path';
 
@@ -42,7 +42,7 @@ export const uploadMiddleware = multer({
 
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
 
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req, file, cb: FileFilterCallback) => {
 
     const allowed = [
 
@@ -62,9 +62,12 @@ export const uploadMiddleware = multer({
 
     ];
 
-    if (allowed.includes(file.mimetype)) cb(null, true);
-
-    else cb(new Error('File type not allowed'), false);
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      cb(new Error('File type not allowed') as any, false);
+    }
 
   },
 

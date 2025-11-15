@@ -6,9 +6,7 @@ import path from 'path';
 
 import { LocalStorageAdapter } from '../lib/storage';
 
-import prisma from '../prismaClient'; // adjust import based on your prisma client file
-
-import { UploadedFile as MulterFile } from 'multer';
+import { prisma } from '../prismaClient';
 
 
 
@@ -46,9 +44,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
 
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-    const multerFile = req.file as unknown as MulterFile;
+    const multerFile = req.file as Express.Multer.File;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
