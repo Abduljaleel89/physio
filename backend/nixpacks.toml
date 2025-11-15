@@ -1,3 +1,6 @@
+[providers]
+nodejs = 'detect'
+
 [phases.setup]
 nixPkgs = ['nodejs-20_x', 'openssl']
 
