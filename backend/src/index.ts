@@ -21,9 +21,12 @@ const allowedOrigins = [
   'http://localhost:3000',
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
-  // Add your Vercel production URL here
-  'https://your-app-name.vercel.app',
-].filter(Boolean) as string[];
+  // Add your Vercel production URL here (update this with your actual Vercel URL)
+  'https://physio-3s3a.vercel.app',
+  'https://physio1.vercel.app',
+  // Allow any vercel.app subdomain for flexibility
+  /^https:\/\/.*\.vercel\.app$/,
+].filter(Boolean) as (string | RegExp)[];
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
@@ -34,7 +37,16 @@ app.use(cors({
       return callback(null, true);
     }
     // In production, check against allowed origins
-    if (allowedOrigins.some(allowed => origin === allowed || origin?.startsWith(allowed))) {
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return origin === allowed || origin?.startsWith(allowed);
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
       console.warn(`CORS blocked origin: ${origin}`);

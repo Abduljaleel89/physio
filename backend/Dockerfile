@@ -3,7 +3,12 @@ WORKDIR /usr/src/app
 # Install OpenSSL compatibility library for Prisma
 RUN apk add --no-cache openssl libssl3
 COPY package*.json ./
-RUN npm install
+RUN npm ci --only=production
+# Copy Prisma schema and generate client
+COPY prisma ./prisma/
+RUN npx prisma generate
+# Copy source code and build
 COPY . .
+RUN npm run build
 EXPOSE 4000
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]
