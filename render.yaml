@@ -11,5 +11,10 @@ services:
         value: production
       - key: PORT
         value: 4000
+      # NOTE: DATABASE_URL must be set in Render dashboard after creating PostgreSQL database
+      # See RENDER_DATABASE_SETUP.md for instructions
+      # NOTE: JWT_SECRET must be set in Render dashboard (generate with: openssl rand -base64 32)
     healthCheckPath: /
+    # Optional: Auto-run migrations after deployment
+    # postDeployCommand: npx prisma migrate deploy
 
