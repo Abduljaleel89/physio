@@ -5,7 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const path_1 = __importDefault(require("path"));
+const prisma_1 = require("./prisma");
 const auth_1 = __importDefault(require("./routes/auth"));
 const exercises_1 = __importDefault(require("./routes/exercises"));
 const therapyPlans_1 = __importDefault(require("./routes/therapyPlans"));
@@ -17,7 +20,12 @@ const appointments_1 = __importDefault(require("./routes/appointments"));
 const invoices_1 = __importDefault(require("./routes/invoices"));
 const uploads_1 = __importDefault(require("./routes/uploads"));
 const admin_1 = __importDefault(require("./routes/admin"));
+const notifications_1 = __importDefault(require("./routes/notifications"));
+const doctor_1 = __importDefault(require("./routes/doctor"));
 const app = (0, express_1.default)();
+app.use((0, helmet_1.default)({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+const limiter = (0, express_rate_limit_1.default)({ windowMs: 15 * 60 * 1000, max: 300 });
+app.use(limiter);
 // CORS configuration - update with your production domains
 const allowedOrigins = [
     'http://localhost:3000',
@@ -31,14 +39,11 @@ const allowedOrigins = [
 ].filter(Boolean);
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin)
             return callback(null, true);
-        // In development, allow all origins for easier testing
         if (process.env.NODE_ENV !== 'production') {
             return callback(null, true);
         }
-        // In production, check against allowed origins
         const isAllowed = allowedOrigins.some(allowed => {
             if (typeof allowed === 'string') {
                 return origin === allowed || origin?.startsWith(allowed);
@@ -81,5 +86,27 @@ app.use("/api/appointments", appointments_1.default);
 app.use("/api/invoices", invoices_1.default);
 app.use("/api/uploads", uploads_1.default);
 app.use("/api/admin", admin_1.default);
+app.use("/api/notifications", notifications_1.default);
+app.use("/api/doctor", doctor_1.default);
+async function waitForDb(retries = 20, delayMs = 1500) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            await prisma_1.prisma.$queryRaw `SELECT 1`;
+            return;
+        }
+        catch (e) {
+            console.warn(`DB not ready, retrying ${i + 1}/${retries}...`);
+            await new Promise((r) => setTimeout(r, delayMs));
+        }
+    }
+    throw new Error('Database not reachable');
+}
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+waitForDb()
+    .then(() => {
+    app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+})
+    .catch((e) => {
+    console.error('Failed to connect to DB on startup', e);
+    process.exit(1);
+});

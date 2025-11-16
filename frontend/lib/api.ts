@@ -96,6 +96,22 @@ export const therapyPlansApi = {
     const response = await api.post('/therapy-plans', data);
     return response.data;
   },
+  addExercise: async (id: number, data: any) => {
+    const response = await api.post(`/therapy-plans/${id}/exercises`, data);
+    return response.data;
+  },
+  editExercise: async (id: number, exerciseId: number, data: any) => {
+    const response = await api.patch(`/therapy-plans/${id}/exercises/${exerciseId}`, data);
+    return response.data;
+  },
+  archiveExercise: async (id: number, exerciseId: number) => {
+    const response = await api.delete(`/therapy-plans/${id}/exercises/${exerciseId}`);
+    return response.data;
+  },
+  reorderExercises: async (id: number, items: Array<{ id: number; order: number }>) => {
+    const response = await api.post(`/therapy-plans/${id}/exercises/reorder`, { items });
+    return response.data;
+  },
 };
 
 // Completion Events endpoints
@@ -140,6 +156,14 @@ export const appointmentsApi = {
     const response = await api.get(`/appointments/calendar?start=${start}&end=${end}`);
     return response.data;
   },
+  update: async (id: number, data: any) => {
+    const response = await api.patch(`/appointments/${id}`, data);
+    return response.data;
+  },
+  cancel: async (id: number, reason?: string) => {
+    const response = await api.delete(`/appointments/${id}`, { data: { reason } as any });
+    return response.data;
+  }
 };
 
 // Upload endpoints
@@ -176,6 +200,116 @@ export const adminApi = {
   },
   getPatients: async () => {
     const response = await api.get('/admin/patients');
+    return response.data;
+  },
+};
+
+// Analytics endpoints
+export const analyticsApi = {
+  adherence: async (startDate: string, endDate: string, therapyPlanId?: number) => {
+    const params = new URLSearchParams({ startDate, endDate });
+    if (therapyPlanId) params.append('therapyPlanId', therapyPlanId.toString());
+    const response = await api.get(`/analytics/adherence?${params.toString()}`);
+    return response.data;
+  },
+};
+
+// Invoices endpoints
+export const invoicesApi = {
+  list: async () => {
+    const response = await api.get('/invoices');
+    return response.data;
+  },
+  create: async (data: any) => {
+    const response = await api.post('/invoices', data);
+    return response.data;
+  },
+  update: async (id: number, data: any) => {
+    const response = await api.patch(`/invoices/${id}`, data);
+    return response.data;
+  },
+  sendEmail: async (id: number) => {
+    const response = await api.post(`/invoices/${id}/send-email`);
+    return response.data;
+  },
+};
+
+// Visit Requests endpoints
+export const visitRequestsApi = {
+  create: async (data: any) => {
+    const response = await api.post('/visit-requests', data);
+    return response.data;
+  },
+  list: async (params?: Record<string,string|number|boolean>) => {
+    const qs = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    const response = await api.get('/visit-requests' + qs);
+    return response.data;
+  },
+  respond: async (id: number, data: { status: 'APPROVED'|'REJECTED'; reason?: string }) => {
+    const response = await api.patch(`/visit-requests/${id}/respond`, data);
+    return response.data;
+  },
+  assign: async (id: number, data: { doctorId: number; date?: string; duration?: number; notes?: string }) => {
+    const response = await api.post(`/visit-requests/${id}/assign`, data);
+    return response.data;
+  },
+};
+
+// Notifications endpoints
+export const notificationsApi = {
+  list: async (params?: { page?: number; pageSize?: number; type?: string; startDate?: string; endDate?: string; read?: 'true'|'false' }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.append('page', String(params.page));
+    if (params?.pageSize) search.append('pageSize', String(params.pageSize));
+    if (params?.type) search.append('type', params.type);
+    if (params?.startDate) search.append('startDate', params.startDate);
+    if (params?.endDate) search.append('endDate', params.endDate);
+    if (params?.read) search.append('read', params.read);
+    const qs = search.toString();
+    const response = await api.get('/notifications' + (qs ? `?${qs}` : ''));
+    return response.data;
+  },
+  markRead: async (id: number) => {
+    const response = await api.post(`/notifications/${id}/read`);
+    return response.data;
+  },
+  markAll: async () => {
+    const response = await api.post('/notifications/read-all');
+    return response.data;
+  },
+};
+
+export const doctorApi = {
+  myPatients: async () => {
+    const response = await api.get('/doctor/my-patients');
+    return response.data;
+  },
+};
+
+// Patient endpoints
+export const patientsApi = {
+  getMyPatientId: async () => {
+    // Get patient ID for current user
+    const response = await api.get('/auth/me');
+    if (response.data.success && response.data.data?.role === 'PATIENT') {
+      // Fetch patient profile to get patient ID
+      const patientsResponse = await api.get('/admin/patients');
+      if (patientsResponse.data.success) {
+        const patients = Array.isArray(patientsResponse.data.data) 
+          ? patientsResponse.data.data 
+          : (patientsResponse.data.data?.patients || []);
+        const patient = patients.find((p: any) => p.userId === response.data.data.id);
+        return patient?.id || null;
+      }
+    }
+    return null;
+  },
+  getCompletions: async (therapyPlanExerciseId?: number, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (therapyPlanExerciseId) params.append('therapyPlanExerciseId', therapyPlanExerciseId.toString());
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await api.get(`/completion-events?${params.toString()}`);
     return response.data;
   },
 };

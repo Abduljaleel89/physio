@@ -46,4 +46,5 @@ const router = express_1.default.Router();
  * @access  Private
  */
 router.post("/:id/undo", authMiddleware_1.authMiddleware, completionEventsController.undoCompletionEvent);
+router.get("/", authMiddleware_1.authMiddleware, completionEventsController.listCompletionEvents);
 exports.default = router;

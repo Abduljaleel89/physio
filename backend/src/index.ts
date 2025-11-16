@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { prisma } from "./prisma";
 import authRoutes from "./routes/auth";
@@ -13,8 +15,14 @@ import appointmentsRoutes from "./routes/appointments";
 import invoicesRoutes from "./routes/invoices";
 import uploadsRoutes from "./routes/uploads";
 import adminRoutes from "./routes/admin";
+import notificationsRoutes from "./routes/notifications";
+import doctorRoutes from "./routes/doctor";
 
 const app = express();
+
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300 });
+app.use(limiter);
 
 // CORS configuration - update with your production domains
 const allowedOrigins = [
@@ -30,13 +38,10 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    // In development, allow all origins for easier testing
     if (process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
-    // In production, check against allowed origins
     const isAllowed = allowedOrigins.some(allowed => {
       if (typeof allowed === 'string') {
         return origin === allowed || origin?.startsWith(allowed);
@@ -85,6 +90,28 @@ app.use("/api/appointments", appointmentsRoutes);
 app.use("/api/invoices", invoicesRoutes);
 app.use("/api/uploads", uploadsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationsRoutes);
+app.use("/api/doctor", doctorRoutes);
+
+async function waitForDb(retries = 20, delayMs = 1500): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return;
+    } catch (e) {
+      console.warn(`DB not ready, retrying ${i + 1}/${retries}...`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error('Database not reachable');
+}
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+waitForDb()
+  .then(() => {
+    app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+  })
+  .catch((e) => {
+    console.error('Failed to connect to DB on startup', e);
+    process.exit(1);
+  });

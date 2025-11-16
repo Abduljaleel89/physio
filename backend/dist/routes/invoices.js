@@ -64,4 +64,10 @@ router.patch("/:id", authMiddleware_1.authMiddleware, invoicesController.updateI
  * @access  Private (Admin or Receptionist)
  */
 router.post("/:id/void", authMiddleware_1.authMiddleware, invoicesController.voidInvoice);
+/**
+ * @route   POST /api/invoices/:id/send-email
+ * @desc    Send invoice email
+ * @access  Private (Admin or Receptionist)
+ */
+router.post("/:id/send-email", authMiddleware_1.authMiddleware, invoicesController.sendInvoiceEmail);
 exports.default = router;

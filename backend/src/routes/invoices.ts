@@ -1,6 +1,6 @@
 import express from "express";
 import * as invoicesController from "../controllers/invoicesController";
-import { authMiddleware, requireAdmin } from "../middleware/authMiddleware";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
@@ -31,6 +31,13 @@ router.patch("/:id", authMiddleware, invoicesController.updateInvoice);
  * @access  Private (Admin or Receptionist)
  */
 router.post("/:id/void", authMiddleware, invoicesController.voidInvoice);
+
+/**
+ * @route   POST /api/invoices/:id/send-email
+ * @desc    Send invoice email
+ * @access  Private (Admin or Receptionist)
+ */
+router.post("/:id/send-email", authMiddleware, invoicesController.sendInvoiceEmail);
 
 export default router;
 

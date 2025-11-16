@@ -46,5 +46,12 @@ router.patch("/:id/exercises/:exerciseId", authMiddleware, requireStaff, therapy
  */
 router.delete("/:id/exercises/:exerciseId", authMiddleware, requireStaff, therapyPlansController.archiveExerciseFromPlan);
 
+/**
+ * @route   POST /api/therapy-plans/:id/exercises/reorder
+ * @desc    Reorder exercises in therapy plan
+ * @access  Private (Admin or assigned Physiotherapist)
+ */
+router.post("/:id/exercises/reorder", authMiddleware, requireStaff, therapyPlansController.reorderExercisesInPlan);
+
 export default router;
 

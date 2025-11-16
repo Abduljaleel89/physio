@@ -4,8 +4,10 @@ exports.createInvoice = createInvoice;
 exports.getInvoices = getInvoices;
 exports.updateInvoice = updateInvoice;
 exports.voidInvoice = voidInvoice;
+exports.sendInvoiceEmail = sendInvoiceEmail;
 const client_1 = require("@prisma/client");
 const prisma_1 = require("../prisma");
+const email_1 = require("../lib/email");
 /**
  * Generate unique invoice number
  */
@@ -396,5 +398,43 @@ async function voidInvoice(req, res) {
             success: false,
             error: "Internal server error",
         });
+    }
+}
+async function sendInvoiceEmail(req, res) {
+    try {
+        if (!req.user) {
+            res.status(401).json({ success: false, error: "Authentication required" });
+            return;
+        }
+        const id = parseInt(req.params.id);
+        const inv = await prisma_1.prisma.invoice.findUnique({
+            where: { id },
+            include: {
+                patient: { include: { user: { select: { email: true, id: true } } } },
+                createdBy: { select: { id: true } },
+            },
+        });
+        if (!inv) {
+            res.status(404).json({ success: false, error: "Invoice not found" });
+            return;
+        }
+        const to = inv.patient?.user?.email;
+        if (!to) {
+            res.status(400).json({ success: false, error: "Patient email not found" });
+            return;
+        }
+        const amount = inv.amountCents ? (inv.amountCents / 100).toFixed(2) : String(inv.amount || '');
+        const subject = `Invoice ${inv.invoiceNumber || '#' + inv.id}`;
+        const html = `
+      <h1>${subject}</h1>
+      <p>Amount: <strong>${amount} ${inv.currency || 'USD'}</strong></p>
+      ${inv.notes ? `<p>Notes: ${inv.notes}</p>` : ''}
+    `;
+        await (0, email_1.sendNotificationEmail)(to, subject, html);
+        res.json({ success: true });
+    }
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, error: "Failed to send email" });
     }
 }

@@ -407,3 +407,65 @@ export async function undoCompletionEvent(req: AuthenticatedRequest, res: Respon
   }
 }
 
+export async function listCompletionEvents(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, error: "Authentication required" });
+      return;
+    }
+
+    const { therapyPlanExerciseId, patientId, startDate, endDate } = req.query as {
+      therapyPlanExerciseId?: string;
+      patientId?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+
+    const where: any = {};
+    if (therapyPlanExerciseId) {
+      where.therapyPlanExerciseId = parseInt(therapyPlanExerciseId);
+    }
+    if (startDate || endDate) {
+      where.completedAt = {};
+      if (startDate) where.completedAt.gte = new Date(startDate);
+      if (endDate) where.completedAt.lte = new Date(endDate);
+    }
+
+    const events = await prisma.completionEvent.findMany({
+      where,
+      include: {
+        therapyPlanExercise: {
+          include: {
+            therapyPlan: true,
+            exercise: true,
+          },
+        },
+        mediaUpload: true,
+      },
+      orderBy: { completedAt: "desc" },
+      take: 500,
+    });
+
+    const filtered = patientId
+      ? events.filter((e) => e.therapyPlanExercise.therapyPlan.patientId === parseInt(patientId))
+      : events;
+
+    res.json({
+      success: true,
+      data: filtered.map((e) => ({
+        id: e.id,
+        therapyPlanExerciseId: e.therapyPlanExerciseId,
+        completedAt: e.completedAt,
+        notes: e.notes,
+        painLevel: e.painLevel,
+        satisfaction: e.satisfaction,
+        undone: e.undone,
+        undoneAt: e.undoneAt,
+      })),
+    });
+  } catch (error) {
+    console.error("List completion events error:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+}
+

@@ -158,7 +158,7 @@ export default function TherapyPlans() {
                     )}
                   </div>
                   <Link
-                    href={`/therapy-plans/${plan.id}`}
+                    href={`/therapy-plans/detail?id=${plan.id}`}
                     className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
                   >
                     View Details

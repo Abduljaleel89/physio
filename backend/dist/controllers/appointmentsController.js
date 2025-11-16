@@ -8,6 +8,38 @@ exports.cancelAppointment = cancelAppointment;
 exports.getAppointmentsForCalendar = getAppointmentsForCalendar;
 const client_1 = require("@prisma/client");
 const prisma_1 = require("../prisma");
+function computeEnd(date, duration) {
+    return new Date(date.getTime() + (duration || 60) * 60 * 1000);
+}
+function withinBusinessHours(date, duration) {
+    const startHour = parseInt(process.env.BUSINESS_START_HOUR || "8");
+    const endHour = parseInt(process.env.BUSINESS_END_HOUR || "18");
+    const start = new Date(date);
+    const end = computeEnd(date, duration);
+    const sH = start.getHours();
+    const eH = end.getHours() + (end.getMinutes() > 0 ? 1 : 0);
+    return sH >= startHour && eH <= endHour;
+}
+async function hasDoctorConflict(doctorId, date, duration, excludeId) {
+    const end = computeEnd(date, duration);
+    const conflicts = await prisma_1.prisma.appointment.findMany({
+        where: {
+            doctorId,
+            status: { not: client_1.AppointmentStatus.CANCELLED },
+            ...(excludeId ? { id: { not: excludeId } } : {}),
+            AND: [
+                { date: { lt: end } },
+                {},
+            ],
+        },
+        select: { id: true, date: true, duration: true },
+    });
+    return conflicts.some((a) => {
+        const aStart = new Date(a.date);
+        const aEnd = computeEnd(aStart, a.duration);
+        return aStart < end && date < aEnd;
+    });
+}
 /**
  * List appointments
  * GET /api/appointments
@@ -106,32 +138,31 @@ async function createAppointment(req, res) {
         }
         const { patientId, doctorId, date, duration, status, visitRequestId, notes } = req.body;
         if (!patientId || !doctorId || !date) {
-            res.status(400).json({
-                success: false,
-                error: "Patient ID, doctor ID, and date are required",
-            });
+            res.status(400).json({ success: false, error: "Patient ID, doctor ID, and date are required" });
+            return;
+        }
+        const apptDate = new Date(date);
+        const apptDuration = duration || 60;
+        if (!withinBusinessHours(apptDate, apptDuration)) {
+            res.status(400).json({ success: false, error: "Outside business hours" });
             return;
         }
         // Verify patient exists
-        const patient = await prisma_1.prisma.patient.findUnique({
-            where: { id: parseInt(patientId) },
-        });
+        const patient = await prisma_1.prisma.patient.findUnique({ where: { id: parseInt(patientId) } });
         if (!patient) {
-            res.status(404).json({
-                success: false,
-                error: "Patient not found",
-            });
+            res.status(404).json({ success: false, error: "Patient not found" });
             return;
         }
         // Verify doctor exists
-        const doctor = await prisma_1.prisma.doctor.findUnique({
-            where: { id: parseInt(doctorId) },
-        });
+        const doctor = await prisma_1.prisma.doctor.findUnique({ where: { id: parseInt(doctorId) } });
         if (!doctor) {
-            res.status(404).json({
-                success: false,
-                error: "Doctor not found",
-            });
+            res.status(404).json({ success: false, error: "Doctor not found" });
+            return;
+        }
+        // Conflict check
+        const conflict = await hasDoctorConflict(parseInt(doctorId), apptDate, apptDuration);
+        if (conflict) {
+            res.status(409).json({ success: false, error: "Doctor has a conflicting appointment" });
             return;
         }
         const appointment = await prisma_1.prisma.appointment.create({
@@ -140,46 +171,22 @@ async function createAppointment(req, res) {
                 doctorId: parseInt(doctorId),
                 createdById: req.user.id,
                 visitRequestId: visitRequestId ? parseInt(visitRequestId) : null,
-                date: new Date(date),
-                duration: duration || 60,
+                date: apptDate,
+                duration: apptDuration,
                 status: status || client_1.AppointmentStatus.SCHEDULED,
                 notes,
             },
             include: {
-                patient: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                email: true,
-                            },
-                        },
-                    },
-                },
-                doctor: {
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                email: true,
-                            },
-                        },
-                    },
-                },
+                patient: { include: { user: { select: { id: true, email: true } } } },
+                doctor: { include: { user: { select: { id: true, email: true } } } },
                 visitRequest: true,
             },
         });
-        res.status(201).json({
-            success: true,
-            data: { appointment },
-        });
+        res.status(201).json({ success: true, data: { appointment } });
     }
     catch (error) {
         console.error("Create appointment error:", error);
-        res.status(500).json({
-            success: false,
-            error: "Internal server error",
-        });
+        res.status(500).json({ success: false, error: "Internal server error" });
     }
 }
 /**
@@ -253,67 +260,46 @@ async function getAppointment(req, res) {
         });
     }
 }
-/**
- * Update appointment
- * PATCH /api/appointments/:id
- * Requires: ADMIN, RECEPTIONIST, or PHYSIOTHERAPIST
- */
+/** Update appointment */
 async function updateAppointment(req, res) {
     try {
         if (!req.user) {
-            res.status(401).json({
-                success: false,
-                error: "Authentication required",
-            });
+            res.status(401).json({ success: false, error: "Authentication required" });
             return;
         }
         const id = parseInt(req.params.id);
         const { date, duration, status, notes } = req.body;
-        const appointment = await prisma_1.prisma.appointment.findUnique({
-            where: { id },
-            include: {
-                doctor: true,
-            },
-        });
-        if (!appointment) {
-            res.status(404).json({
-                success: false,
-                error: "Appointment not found",
-            });
+        const existing = await prisma_1.prisma.appointment.findUnique({ where: { id } });
+        if (!existing) {
+            res.status(404).json({ success: false, error: "Appointment not found" });
             return;
         }
-        // Check permissions: doctor can only update their own appointments
-        if (req.user.role === client_1.Role.PHYSIOTHERAPIST && appointment.doctor.userId !== req.user.id) {
-            res.status(403).json({
-                success: false,
-                error: "You can only update your own appointments",
-            });
+        const newDate = date ? new Date(date) : new Date(existing.date);
+        const newDuration = duration !== undefined ? parseInt(duration) : existing.duration;
+        if (!withinBusinessHours(newDate, newDuration)) {
+            res.status(400).json({ success: false, error: "Outside business hours" });
+            return;
+        }
+        const conflict = await hasDoctorConflict(existing.doctorId, newDate, newDuration, id);
+        if (conflict) {
+            res.status(409).json({ success: false, error: "Doctor has a conflicting appointment" });
             return;
         }
         const updated = await prisma_1.prisma.appointment.update({
             where: { id },
             data: {
-                ...(date && { date: new Date(date) }),
-                ...(duration !== undefined && { duration: parseInt(duration) }),
+                ...(date && { date: newDate }),
+                ...(duration !== undefined && { duration: newDuration }),
                 ...(status && { status }),
                 ...(notes !== undefined && { notes }),
             },
-            include: {
-                patient: true,
-                doctor: true,
-            },
+            include: { patient: true, doctor: true },
         });
-        res.json({
-            success: true,
-            data: { appointment: updated },
-        });
+        res.json({ success: true, data: { appointment: updated } });
     }
     catch (error) {
         console.error("Update appointment error:", error);
-        res.status(500).json({
-            success: false,
-            error: "Internal server error",
-        });
+        res.status(500).json({ success: false, error: "Internal server error" });
     }
 }
 /**
