@@ -88,25 +88,42 @@ app.use("/api/uploads", uploads_1.default);
 app.use("/api/admin", admin_1.default);
 app.use("/api/notifications", notifications_1.default);
 app.use("/api/doctor", doctor_1.default);
-async function waitForDb(retries = 20, delayMs = 1500) {
+async function waitForDb(retries = 30, delayMs = 2000) {
+    if (!process.env.DATABASE_URL) {
+        console.warn('⚠️  DATABASE_URL not set - database operations will fail');
+        return false;
+    }
     for (let i = 0; i < retries; i++) {
         try {
             await prisma_1.prisma.$queryRaw `SELECT 1`;
-            return;
+            console.log('✅ Database connection established');
+            return true;
         }
         catch (e) {
-            console.warn(`DB not ready, retrying ${i + 1}/${retries}...`);
+            const errorMsg = e?.message || 'Unknown error';
+            console.warn(`DB not ready, retrying ${i + 1}/${retries}... (${errorMsg})`);
             await new Promise((r) => setTimeout(r, delayMs));
         }
     }
-    throw new Error('Database not reachable');
+    console.error('⚠️  Failed to connect to database after retries - server will start but DB operations may fail');
+    return false;
 }
-const PORT = process.env.PORT || 4000;
-waitForDb()
-    .then(() => {
-    app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
-})
-    .catch((e) => {
-    console.error('Failed to connect to DB on startup', e);
-    process.exit(1);
+const PORT = parseInt(process.env.PORT || '4000', 10);
+// Start server regardless of DB connection status
+// This allows the server to start and attempt DB connection in the background
+waitForDb().then((connected) => {
+    if (connected) {
+        console.log('✅ Database ready - all features available');
+    }
+    else {
+        console.warn('⚠️  Database not connected - some features may be unavailable');
+    }
+});
+// Start the server
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Backend running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    if (!process.env.DATABASE_URL) {
+        console.error('❌ DATABASE_URL environment variable is not set!');
+    }
 });

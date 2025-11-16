@@ -114,7 +114,7 @@ async function waitForDb(retries = 30, delayMs = 2000): Promise<boolean> {
   return false;
 }
 
-const PORT = process.env.PORT || 4000;
+const PORT = parseInt(process.env.PORT || '4000', 10);
 
 // Start server regardless of DB connection status
 // This allows the server to start and attempt DB connection in the background
