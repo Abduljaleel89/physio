@@ -631,21 +631,23 @@ export default function AdminUsersPage() {
                         </p>
                       )}
                     </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mt-2 sm:mt-0 relative z-10">
-                      <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-end gap-2 sm:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
+                      <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
                         Created: {new Date(userItem.createdAt).toLocaleDateString()}
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap relative z-10">
+                      <div className="flex items-center gap-2 flex-wrap order-1 sm:order-2 w-full sm:w-auto">
                         <button
                           onClick={() => handleEdit(userItem)}
-                          className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors whitespace-nowrap relative z-10"
+                          className="px-3 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors whitespace-nowrap flex-shrink-0"
+                          type="button"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleResetPassword(userItem.id)}
                           disabled={resettingPassword === userItem.id}
-                          className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap relative z-10"
+                          className="px-3 py-2 text-sm font-medium text-white bg-orange-600 dark:bg-orange-500 rounded-lg hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                          type="button"
                         >
                           {resettingPassword === userItem.id ? 'Resetting...' : 'Reset Password'}
                         </button>
