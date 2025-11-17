@@ -133,7 +133,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
         {/* Mobile menu */}
         {mobileMenuOpen && user && (
-          <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300">
+          <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300 relative z-40">
             <div className="px-2 pt-2 pb-3 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
               {filteredNavItems.map((item) => (
                 <Link

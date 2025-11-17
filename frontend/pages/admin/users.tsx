@@ -428,26 +428,41 @@ export default function AdminUsersPage() {
 
         {/* Edit User Modal */}
         {showEditModal && editingUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-soft-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-[9999]" 
+            style={{ zIndex: 9999, position: 'fixed' }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowEditModal(false);
+                setEditingUser(null);
+                setError('');
+              }
+            }}
+          >
+            <div 
+              className="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl shadow-soft-lg max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative z-[10000] mx-2 sm:mx-0" 
+              style={{ zIndex: 10000, position: 'relative' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Edit User</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-50">Edit User</h2>
                   <button
                     onClick={() => {
                       setShowEditModal(false);
                       setEditingUser(null);
                       setError('');
                     }}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 -mr-1"
+                    aria-label="Close modal"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
                 <form onSubmit={handleUpdateUser} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email *</label>
                       <input
@@ -559,7 +574,7 @@ export default function AdminUsersPage() {
                       />
                     </div>
                   </div>
-                  <div className="flex justify-end space-x-4 pt-4">
+                  <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4 pt-4">
                     <button
                       type="button"
                       onClick={() => {
@@ -567,13 +582,13 @@ export default function AdminUsersPage() {
                         setEditingUser(null);
                         setError('');
                       }}
-                      className="btn-secondary"
+                      className="btn-secondary w-full sm:w-auto"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="btn-primary"
+                      className="btn-primary w-full sm:w-auto"
                     >
                       Update User
                     </button>
@@ -595,9 +610,9 @@ export default function AdminUsersPage() {
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-slate-700">
               {users.map((userItem) => (
-                <div key={userItem.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                <div key={userItem.id} className="px-4 sm:px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{userItem.email}</h3>
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
@@ -616,21 +631,21 @@ export default function AdminUsersPage() {
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mt-2 sm:mt-0 relative z-10">
+                      <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                         Created: {new Date(userItem.createdAt).toLocaleDateString()}
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2 flex-wrap relative z-10">
                         <button
                           onClick={() => handleEdit(userItem)}
-                          className="px-3 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                          className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors whitespace-nowrap relative z-10"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleResetPassword(userItem.id)}
                           disabled={resettingPassword === userItem.id}
-                          className="px-3 py-1.5 text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap relative z-10"
                         >
                           {resettingPassword === userItem.id ? 'Resetting...' : 'Reset Password'}
                         </button>
