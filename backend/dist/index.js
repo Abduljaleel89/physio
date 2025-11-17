@@ -78,6 +78,25 @@ app.use(express_1.default.json());
 app.get("/", (req, res) => {
     res.json({ status: "Backend running", time: new Date().toISOString() });
 });
+// Database health check endpoint
+app.get("/health", async (req, res) => {
+    try {
+        await prisma_1.prisma.$queryRaw `SELECT 1`;
+        res.json({
+            status: "healthy",
+            database: "connected",
+            timestamp: new Date().toISOString(),
+        });
+    }
+    catch (error) {
+        res.status(503).json({
+            status: "unhealthy",
+            database: "disconnected",
+            error: error?.message || "Database connection failed",
+            timestamp: new Date().toISOString(),
+        });
+    }
+});
 // Serve static uploads (no directory listing)
 const uploadsDir = path_1.default.join(process.cwd(), "backend", "uploads");
 app.use("/uploads", express_1.default.static(uploadsDir, {

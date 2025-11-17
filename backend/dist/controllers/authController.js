@@ -321,9 +321,30 @@ async function login(req, res) {
     }
     catch (error) {
         console.error("Login error:", error);
+        console.error("Error details:", {
+            message: error?.message,
+            code: error?.code,
+            meta: error?.meta,
+            stack: error?.stack,
+        });
+        // Provide more specific error messages
+        let errorMessage = "Internal server error during login";
+        if (error?.code === 'P1001') {
+            errorMessage = "Database connection failed. Please check DATABASE_URL.";
+        }
+        else if (error?.code === 'P2002') {
+            errorMessage = "Database constraint violation";
+        }
+        else if (error?.code === 'P2025') {
+            errorMessage = "Record not found in database";
+        }
+        else if (error?.message) {
+            errorMessage = error.message;
+        }
         res.status(500).json({
             success: false,
-            error: "Internal server error during login",
+            error: errorMessage,
+            details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
         });
     }
 }
