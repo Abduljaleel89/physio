@@ -1,9 +1,37 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api';
+// Get API base URL - prioritize environment variable
+const getApiBaseUrl = () => {
+  // If explicitly set, use it
+  if (process.env.NEXT_PUBLIC_API_BASE) {
+    return process.env.NEXT_PUBLIC_API_BASE;
+  }
+  
+  // In production (Vercel), warn if not set
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isProduction = hostname.includes('vercel.app') || hostname.includes('vercel.com') || hostname !== 'localhost';
+    
+    if (isProduction && !hostname.includes('localhost')) {
+      console.error('❌ NEXT_PUBLIC_API_BASE is not set!');
+      console.error('Please set NEXT_PUBLIC_API_BASE in Vercel environment variables to your Render backend URL');
+      console.error('Example: https://physio-backend-xxxx.onrender.com');
+    }
+  }
+  
+  // Fallback to localhost for development
+  return 'http://localhost:4000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Remove trailing /api if present to avoid double /api
 const baseURL = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
+
+// Log API base URL in development
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log('🔗 API Base URL:', baseURL);
+}
 
 const api = axios.create({
   baseURL: baseURL,
@@ -188,6 +216,14 @@ export const adminApi = {
   },
   listUsers: async () => {
     const response = await api.get('/admin/users');
+    return response.data;
+  },
+  updateUser: async (userId: number, data: any) => {
+    const response = await api.put(`/admin/users/${userId}`, data);
+    return response.data;
+  },
+  resetPassword: async (userId: number) => {
+    const response = await api.post(`/admin/users/${userId}/reset-password`);
     return response.data;
   },
   assignDoctor: async (patientId: number, doctorId: number) => {

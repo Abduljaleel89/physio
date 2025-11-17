@@ -39,5 +39,19 @@ router.get("/doctors", authMiddleware, requireAdmin, adminController.getDoctors)
  */
 router.get("/patients", authMiddleware, requireAdmin, adminController.getPatients);
 
+/**
+ * @route   PUT /api/admin/users/:id
+ * @desc    Update user details
+ * @access  Private (Admin)
+ */
+router.put("/users/:id", authMiddleware, requireAdmin, adminController.updateUser);
+
+/**
+ * @route   POST /api/admin/users/:id/reset-password
+ * @desc    Reset user password
+ * @access  Private (Admin)
+ */
+router.post("/users/:id/reset-password", authMiddleware, requireAdmin, adminController.resetUserPassword);
+
 export default router;
 

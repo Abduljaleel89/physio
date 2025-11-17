@@ -84,7 +84,9 @@ export default function MyExercisesPage() {
 
   const undoCompletion = async (ev: any) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api'}/completion-events/${ev.id}/undo`, {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000';
+      const apiUrl = apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`;
+      const res = await fetch(`${apiUrl}/completion-events/${ev.id}/undo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(typeof window !== 'undefined' ? { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` } : {}) },
         body: JSON.stringify({ reason: 'Self undo' }),

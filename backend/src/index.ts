@@ -27,6 +27,7 @@ app.use(limiter);
 // CORS configuration - update with your production domains
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3001', // Alternative local port
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
   // Add your Vercel production URL here (update this with your actual Vercel URL)
@@ -34,14 +35,22 @@ const allowedOrigins = [
   'https://physio1.vercel.app',
   // Allow any vercel.app subdomain for flexibility
   /^https:\/\/.*\.vercel\.app$/,
+  /^https:\/\/.*\.vercel\.com$/,
 ].filter(Boolean) as (string | RegExp)[];
 
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin) return callback(null, true);
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // In development, allow all origins
     if (process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
+    
+    // Check if origin is allowed
     const isAllowed = allowedOrigins.some(allowed => {
       if (typeof allowed === 'string') {
         return origin === allowed || origin?.startsWith(allowed);
@@ -55,10 +64,14 @@ app.use(cors({
       callback(null, true);
     } else {
       console.warn(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      console.warn(`Allowed origins: ${JSON.stringify(allowedOrigins)}`);
+      // In production, be strict but log for debugging
+      callback(new Error(`Not allowed by CORS. Origin: ${origin}`));
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());

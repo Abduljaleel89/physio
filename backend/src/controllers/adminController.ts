@@ -452,3 +452,214 @@ export async function getPatients(req: AuthenticatedRequest, res: Response): Pro
   }
 }
 
+/**
+ * Update user details
+ * PUT /api/admin/users/:id
+ * Requires: ADMIN
+ */
+export async function updateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+      return;
+    }
+
+    const userId = parseInt(req.params.id);
+    const { email, role, firstName, lastName, regNumber, dateOfBirth, phone, address, licenseNumber, specialization } = req.body;
+
+    if (!userId || isNaN(userId)) {
+      res.status(400).json({
+        success: false,
+        error: "Valid user ID is required",
+      });
+      return;
+    }
+
+    // Get existing user
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        patientProfile: true,
+        doctorProfile: true,
+      },
+    });
+
+    if (!existingUser) {
+      res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+      return;
+    }
+
+    // Don't allow changing to ADMIN role or changing from ADMIN role
+    if (role) {
+      if (role === Role.ADMIN && existingUser.role !== Role.ADMIN) {
+        res.status(403).json({
+          success: false,
+          error: "Cannot change user role to ADMIN",
+        });
+        return;
+      }
+      if (existingUser.role === Role.ADMIN && role !== Role.ADMIN) {
+        res.status(403).json({
+          success: false,
+          error: "Cannot change ADMIN user role",
+        });
+        return;
+      }
+    }
+
+    // If email is being changed, check if new email already exists
+    if (email && email !== existingUser.email) {
+      const emailExists = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (emailExists) {
+        res.status(409).json({
+          success: false,
+          error: "Email already in use",
+        });
+        return;
+      }
+    }
+
+    // Update user
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(email && { email }),
+        ...(role && { role }),
+      },
+      include: {
+        patientProfile: true,
+        doctorProfile: true,
+      },
+    });
+
+    // Update patient profile if exists
+    if (existingUser.patientProfile && (firstName || lastName || regNumber || dateOfBirth || phone !== undefined || address !== undefined)) {
+      await prisma.patient.update({
+        where: { id: existingUser.patientProfile.id },
+        data: {
+          ...(firstName && { firstName }),
+          ...(lastName && { lastName }),
+          ...(regNumber && { regNumber }),
+          ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
+          ...(phone !== undefined && { phone }),
+          ...(address !== undefined && { address }),
+        },
+      });
+    }
+
+    // Update doctor profile if exists
+    if (existingUser.doctorProfile && (firstName || lastName || licenseNumber !== undefined || specialization !== undefined || phone !== undefined)) {
+      await prisma.doctor.update({
+        where: { id: existingUser.doctorProfile.id },
+        data: {
+          ...(firstName && { firstName }),
+          ...(lastName && { lastName }),
+          ...(licenseNumber !== undefined && { licenseNumber }),
+          ...(specialization !== undefined && { specialization }),
+          ...(phone !== undefined && { phone }),
+        },
+      });
+    }
+
+    // Fetch updated user with profiles
+    const finalUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        patientProfile: true,
+        doctorProfile: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        user: finalUser,
+        message: "User updated successfully",
+      },
+    });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+}
+
+/**
+ * Reset user password
+ * POST /api/admin/users/:id/reset-password
+ * Requires: ADMIN
+ */
+export async function resetUserPassword(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+      return;
+    }
+
+    const userId = parseInt(req.params.id);
+
+    if (!userId || isNaN(userId)) {
+      res.status(400).json({
+        success: false,
+        error: "Valid user ID is required",
+      });
+      return;
+    }
+
+    // Get existing user
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+      return;
+    }
+
+    // Generate new password
+    const newPassword = generatePassword(12);
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update user password
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        userId: existingUser.id,
+        email: existingUser.email,
+        password: newPassword, // Return new password for admin to share
+        message: "Password reset successfully",
+      },
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+}
+
