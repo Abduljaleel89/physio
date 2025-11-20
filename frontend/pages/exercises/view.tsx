@@ -5,6 +5,56 @@ import { useAuth } from '../../lib/auth';
 import Layout from '../../components/Layout';
 import { exercisesApi, completionEventsApi, therapyPlansApi } from '../../lib/api';
 
+// Helper function to normalize video URLs
+const normalizeVideoUrl = (videoUrl: string | null | undefined): string | null => {
+  if (!videoUrl) return null;
+  
+  // Get API base URL
+  const getApiBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      // Check if NEXT_PUBLIC_API_BASE is set
+      if (process.env.NEXT_PUBLIC_API_BASE) {
+        const base = process.env.NEXT_PUBLIC_API_BASE;
+        return base.endsWith('/api') ? base.replace('/api', '') : base;
+      }
+      // Fallback: try to infer from current location (for production)
+      const hostname = window.location.hostname;
+      if (hostname.includes('vercel.app') || hostname.includes('vercel.com')) {
+        // In production, use the Render backend URL (should be set in env)
+        return 'https://physio-backend-g8vj.onrender.com';
+      }
+    }
+    return 'http://localhost:4000';
+  };
+  
+  const baseUrl = getApiBaseUrl();
+  
+  // If it's already a full URL (starts with http:// or https://)
+  if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
+    // If it's localhost in production, convert to API base URL
+    if (videoUrl.includes('localhost:4000')) {
+      const path = videoUrl.split('/uploads/')[1];
+      if (path) {
+        return `${baseUrl}/uploads/${path}`;
+      }
+    }
+    // If it's already a production URL, use it as-is
+    return videoUrl;
+  }
+  
+  // If it's a relative path, prepend API base URL
+  if (videoUrl.startsWith('/uploads/')) {
+    return `${baseUrl}${videoUrl}`;
+  }
+  
+  // If it's just a filename or path without leading slash, assume it's in uploads
+  if (videoUrl && !videoUrl.includes('://')) {
+    return `${baseUrl}/uploads/${videoUrl.startsWith('/') ? videoUrl.slice(1) : videoUrl}`;
+  }
+  
+  return videoUrl;
+};
+
 export default function ExerciseViewPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -247,8 +297,9 @@ export default function ExerciseViewPage() {
                       controls
                       onEnded={handleVideoEnded}
                       onTimeUpdate={handleVideoProgress}
+                      crossOrigin="anonymous"
                     >
-                      <source src={exercise.videoUrl} type="video/mp4" />
+                      <source src={normalizeVideoUrl(exercise.videoUrl) || ''} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
                   </div>

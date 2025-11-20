@@ -45,10 +45,10 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen transition-colors duration-500">
       <nav className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-soft border-b border-gray-200/50 dark:border-slate-700/50 sticky top-0 z-50 transition-all duration-500 animate-fade-in">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="grid grid-cols-[auto_1fr_auto] items-center h-14 sm:h-16 gap-2 lg:gap-3">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-6">
+          <div className="grid grid-cols-[auto_1fr_auto] items-center h-14 sm:h-16 gap-1 sm:gap-2 lg:gap-3">
             {/* Left side: Logo - compact */}
-            <div className="flex items-center">
+            <div className="flex items-center min-w-0">
               <Link href="/dashboard" className="flex items-center space-x-1 sm:space-x-1.5 text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 dark:from-primary-400 dark:via-primary-300 dark:to-primary-400 bg-clip-text text-transparent hover:from-primary-700 hover:via-primary-600 hover:to-primary-700 dark:hover:from-primary-300 dark:hover:via-primary-200 dark:hover:to-primary-300 transition-all duration-300 animate-shimmer bg-[length:200%_auto]">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-primary-600 dark:text-primary-400 flex-shrink-0 transition-all duration-300 hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -79,7 +79,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
             
             {/* Right side: User actions - fixed column width */}
-            <div className="flex items-center justify-end space-x-1.5 lg:space-x-2 w-[240px] lg:w-[280px] xl:w-[300px] flex-shrink-0">
+            <div className="flex items-center justify-end space-x-1 sm:space-x-1.5 lg:space-x-2 flex-shrink-0">
               {user && (
                 <>
                   {/* Theme Toggle */}
@@ -115,7 +115,7 @@ export default function Layout({ children }: LayoutProps) {
                   {/* Mobile menu button */}
                   <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-50 hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 flex-shrink-0 transition-colors"
+                    className="md:hidden inline-flex items-center justify-center p-1.5 sm:p-2 rounded-lg text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-50 hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 flex-shrink-0 transition-colors"
                     aria-label="Toggle menu"
                   >
                     {mobileMenuOpen ? (
