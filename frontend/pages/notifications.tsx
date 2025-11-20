@@ -139,15 +139,15 @@ export default function NotificationsPage() {
   return (
     <Layout>
       <div className="px-4 sm:px-0">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-2">Notifications</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-50 mb-2">Notifications</h1>
             <p className="text-gray-700 dark:text-gray-300">Filter and review your notifications</p>
           </div>
-          <div className="space-x-2">
-            <button onClick={exportCsv} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">Export CSV</button>
-            <button onClick={markAll} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">Mark all as read</button>
-            <button onClick={load} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">Refresh</button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={exportCsv} className="px-3 sm:px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">Export CSV</button>
+            <button onClick={markAll} className="px-3 sm:px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">Mark all as read</button>
+            <button onClick={load} className="px-3 sm:px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">Refresh</button>
           </div>
         </div>
 
@@ -163,7 +163,7 @@ export default function NotificationsPage() {
         )}
 
         <form onSubmit={applyFilters} className="mb-4 card">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
               <select value={type} onChange={(e)=> setType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
@@ -201,23 +201,23 @@ export default function NotificationsPage() {
             <>
               <ul className="divide-y divide-gray-200 dark:divide-slate-700">
                 {items.map((n)=> (
-                  <li key={n.id} className={`p-4 ${!n.read ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{n.title || 'Notification'}</div>
+                  <li key={n.id} className={`p-3 sm:p-4 ${!n.read ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-50 break-words">{n.title || 'Notification'}</div>
                         {n.type && <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{n.type}</div>}
-                        {n.message && <div className="text-sm text-gray-800 dark:text-gray-200 mt-1">{n.message}</div>}
+                        {n.message && <div className="text-sm text-gray-800 dark:text-gray-200 mt-1 break-words">{n.message}</div>}
                         {n.createdAt && <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(n.createdAt).toLocaleString()}</div>}
                       </div>
                       {!n.read && (
-                        <button onClick={()=> markRead(n.id)} className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline font-medium transition-colors">Mark read</button>
+                        <button onClick={()=> markRead(n.id)} className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline font-medium transition-colors flex-shrink-0 whitespace-nowrap">Mark read</button>
                       )}
                     </div>
                   </li>
                 ))}
               </ul>
-              <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-slate-700">
-                <div className="text-sm text-gray-700 dark:text-gray-300">Page {page} of {totalPages} • {total} total</div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border-t border-gray-200 dark:border-slate-700">
+                <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Page {page} of {totalPages} • {total} total</div>
                 <div className="flex items-center space-x-2">
                   <select value={pageSize} onChange={(e)=> { setPageSize(parseInt(e.target.value)); setPage(1); }} className="px-2 py-1 border border-gray-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
                     {[10,20,50,100].map((s)=> (<option key={s} value={s}>{s} / page</option>))}

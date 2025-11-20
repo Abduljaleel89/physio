@@ -85,12 +85,12 @@ export default function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-soft-lg z-50 transition-all duration-300 animate-scale-in">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-soft-lg z-50 transition-all duration-300 animate-scale-in">
           <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-700">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200 transition-colors duration-300">Notifications</span>
-            <button onClick={markAll} className="text-xs text-blue-600 dark:text-blue-400 hover:underline transition-colors duration-300">Mark all as read</button>
+            <button onClick={markAll} className="text-xs text-blue-600 dark:text-blue-400 hover:underline transition-colors duration-300 whitespace-nowrap">Mark all as read</button>
           </div>
-          <div className="max-h-80 overflow-auto">
+          <div className="max-h-[calc(100vh-12rem)] sm:max-h-80 overflow-auto">
             {loading ? (
               <div className="p-4 text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">Loading…</div>
             ) : items.length === 0 ? (
@@ -99,16 +99,16 @@ export default function NotificationsBell() {
               <ul className="divide-y divide-gray-100 dark:divide-gray-700">
                 {items.map((n) => (
                   <li key={n.id} className={`p-3 transition-colors duration-300 ${!n.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors duration-300">{n.title || 'Notification'}</p>
-                        {n.message && <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5 transition-colors duration-300">{n.message}</p>}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors duration-300 break-words">{n.title || 'Notification'}</p>
+                        {n.message && <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5 transition-colors duration-300 break-words">{n.message}</p>}
                         {n.createdAt && (
                           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 transition-colors duration-300">{new Date(n.createdAt).toLocaleString()}</p>
                         )}
                       </div>
                       {!n.read && (
-                        <button onClick={() => markRead(n.id)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2 transition-colors duration-300">Mark read</button>
+                        <button onClick={() => markRead(n.id)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2 transition-colors duration-300 flex-shrink-0 whitespace-nowrap">Mark read</button>
                       )}
                     </div>
                   </li>

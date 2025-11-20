@@ -20,7 +20,7 @@ const normalizeVideoUrl = (videoUrl: string | null | undefined): string | null =
       // Fallback: try to infer from current location (for production)
       const hostname = window.location.hostname;
       if (hostname.includes('vercel.app') || hostname.includes('vercel.com')) {
-        // In production, use the Render backend URL (should be set in env)
+        // In production, use the Render backend URL
         return 'https://physio-backend-g8vj.onrender.com';
       }
     }
@@ -29,30 +29,36 @@ const normalizeVideoUrl = (videoUrl: string | null | undefined): string | null =
   
   const baseUrl = getApiBaseUrl();
   
-  // If it's already a full URL (starts with http:// or https://)
-  if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
-    // If it's localhost in production, convert to API base URL
-    if (videoUrl.includes('localhost:4000')) {
-      const path = videoUrl.split('/uploads/')[1];
-      if (path) {
-        return `${baseUrl}/uploads/${path}`;
+  try {
+    // If it's already a full URL (starts with http:// or https://)
+    if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
+      // If it's localhost in production, convert to API base URL
+      if (videoUrl.includes('localhost:4000') || videoUrl.includes('localhost')) {
+        const pathMatch = videoUrl.match(/\/uploads\/(.+)$/);
+        if (pathMatch && pathMatch[1]) {
+          return `${baseUrl}/uploads/${pathMatch[1]}`;
+        }
       }
+      // If it's already a production URL, use it as-is
+      return videoUrl;
     }
-    // If it's already a production URL, use it as-is
+    
+    // If it's a relative path, prepend API base URL
+    if (videoUrl.startsWith('/uploads/')) {
+      return `${baseUrl}${videoUrl}`;
+    }
+    
+    // If it's just a filename or path without leading slash, assume it's in uploads
+    if (videoUrl && !videoUrl.includes('://')) {
+      const cleanPath = videoUrl.startsWith('/') ? videoUrl.slice(1) : videoUrl;
+      return `${baseUrl}/uploads/${cleanPath}`;
+    }
+    
+    return videoUrl;
+  } catch (error) {
+    console.error('Error normalizing video URL:', error, videoUrl);
     return videoUrl;
   }
-  
-  // If it's a relative path, prepend API base URL
-  if (videoUrl.startsWith('/uploads/')) {
-    return `${baseUrl}${videoUrl}`;
-  }
-  
-  // If it's just a filename or path without leading slash, assume it's in uploads
-  if (videoUrl && !videoUrl.includes('://')) {
-    return `${baseUrl}/uploads/${videoUrl.startsWith('/') ? videoUrl.slice(1) : videoUrl}`;
-  }
-  
-  return videoUrl;
 };
 
 export default function ExerciseViewPage() {
@@ -66,6 +72,7 @@ export default function ExerciseViewPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [videoWatched, setVideoWatched] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
   const [completionForm, setCompletionForm] = useState({
     notes: '',
@@ -297,17 +304,65 @@ export default function ExerciseViewPage() {
                       controls
                       onEnded={handleVideoEnded}
                       onTimeUpdate={handleVideoProgress}
-                      crossOrigin="anonymous"
+                      onError={(e) => {
+                        console.error('Video loading error:', e);
+                        const video = e.currentTarget;
+                        const normalizedUrl = normalizeVideoUrl(exercise.videoUrl);
+                        console.error('Original URL:', exercise.videoUrl);
+                        console.error('Normalized URL:', normalizedUrl);
+                        if (video.error) {
+                          console.error('Video error code:', video.error.code, 'Message:', video.error.message);
+                          let errorMsg = 'Failed to load video';
+                          if (video.error.code === 4) {
+                            errorMsg = 'Video format not supported or file not found';
+                          } else if (video.error.code === 2) {
+                            errorMsg = 'Network error loading video';
+                          } else if (video.error.code === 3) {
+                            errorMsg = 'Video decoding error';
+                          }
+                          setVideoError(errorMsg);
+                        }
+                      }}
+                      onLoadStart={() => {
+                        const normalizedUrl = normalizeVideoUrl(exercise.videoUrl);
+                        console.log('Loading video from:', normalizedUrl);
+                        setVideoError(null);
+                      }}
+                      onLoadedData={() => {
+                        setVideoError(null);
+                      }}
                     >
                       <source src={normalizeVideoUrl(exercise.videoUrl) || ''} type="video/mp4" />
+                      <source src={normalizeVideoUrl(exercise.videoUrl) || ''} type="video/webm" />
+                      <source src={normalizeVideoUrl(exercise.videoUrl) || ''} type="video/ogg" />
                       Your browser does not support the video tag.
                     </video>
                   </div>
-                  <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                    {videoWatched 
-                      ? '✓ Video watched. You can now mark this exercise as completed.' 
-                      : 'Please watch the video to understand how to perform this exercise.'}
-                  </p>
+                  {videoError && (
+                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-800 dark:text-red-300 mb-2">{videoError}</p>
+                      <a
+                        href={normalizeVideoUrl(exercise.videoUrl) || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Try opening video in new tab →
+                      </a>
+                    </div>
+                  )}
+                  {!videoError && (
+                    <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                      {videoWatched 
+                        ? '✓ Video watched. You can now mark this exercise as completed.' 
+                        : 'Please watch the video to understand how to perform this exercise.'}
+                    </p>
+                  )}
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      Debug: {normalizeVideoUrl(exercise.videoUrl) || 'No URL'}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12">
