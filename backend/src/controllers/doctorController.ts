@@ -209,7 +209,6 @@ export async function getPatientHistory(req: AuthenticatedRequest, res: Response
           lastName: patient.lastName,
           regNumber: patient.regNumber,
           dateOfBirth: patient.dateOfBirth,
-          gender: patient.gender,
           phone: patient.phone,
           email: patient.user?.email,
         },

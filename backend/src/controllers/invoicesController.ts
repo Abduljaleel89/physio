@@ -663,17 +663,17 @@ export async function sendInvoiceEmail(req: AuthenticatedRequest, res: Response)
           <table class="summary-table">
             <tr>
               <td>Subtotal:</td>
-              <td>${formatCurrency(inv.subtotal, inv.currency || 'USD')}</td>
+              <td>${formatCurrency(Number(inv.subtotal), inv.currency || 'USD')}</td>
             </tr>
             ${inv.taxable && inv.taxRate && inv.taxAmount ? `
             <tr>
               <td>Tax (${inv.taxRate}%):</td>
-              <td>${formatCurrency(inv.taxAmount, inv.currency || 'USD')}</td>
+              <td>${formatCurrency(Number(inv.taxAmount), inv.currency || 'USD')}</td>
             </tr>
             ` : ''}
             <tr class="total-row">
               <td>Total:</td>
-              <td>${formatCurrency(inv.amount, inv.currency || 'USD')}</td>
+              <td>${formatCurrency(Number(inv.amount), inv.currency || 'USD')}</td>
             </tr>
           </table>
           

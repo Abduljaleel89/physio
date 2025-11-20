@@ -171,6 +171,11 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
         therapyPlanExercise: {
           include: {
             exercise: true,
+            therapyPlan: {
+              include: {
+                doctor: true,
+              },
+            },
           },
         },
         mediaUpload: true,
@@ -187,11 +192,11 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
 
     // create notification for assigned doctor if any
     // business logic: find assigned doctor via therapyPlan
-    if (therapyPlanExercise.therapyPlan.doctorId) {
+    if (completionEvent.therapyPlanExercise.therapyPlan.doctorId) {
       try {
-        const doctor = await prisma.doctor.findUnique({ where: { id: therapyPlanExercise.therapyPlan.doctorId } });
+        const doctor = await prisma.doctor.findUnique({ where: { id: completionEvent.therapyPlanExercise.therapyPlan.doctorId } });
         if (doctor?.userId) {
-          const exerciseName = therapyPlanExercise.exercise?.name || 'an exercise';
+          const exerciseName = completionEvent.therapyPlanExercise.exercise?.name || 'an exercise';
           const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
           
           // Build notification message with feedback details
