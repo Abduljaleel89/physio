@@ -1,12 +1,12 @@
 // backend/src/controllers/uploadsController.ts
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 
 import path from 'path';
 
 import { LocalStorageAdapter } from '../lib/storage';
 
-import { prisma } from '../prismaClient';
+import { prisma } from '../prisma';
 
 
 
@@ -32,7 +32,9 @@ const storage = new LocalStorageAdapter({
 
  */
 
-export const uploadFile = async (req: Request, res: Response) => {
+import { AuthenticatedRequest } from '../middleware/authMiddleware';
+
+export const uploadFile = async (req: AuthenticatedRequest, res: Response) => {
 
   try {
 
@@ -46,9 +48,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const multerFile = req.file as Express.Multer.File;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-    const userId = (req as any).user?.userId ?? (req as any).user?.id ?? null;
+    const userId = req.user?.userId ?? req.user?.id ?? null;
 
 
 
@@ -74,7 +74,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
         uploadedBy: userId ? parseInt(userId.toString()) : null,
 
-        patientId: (req as any).user?.role === 'PATIENT' ? (await getPatientIdForUser(userId)) : null,
+        patientId: req.user?.role === 'PATIENT' ? (await getPatientIdForUser(userId)) : null,
 
         entityType: req.body.purpose || null,
 
@@ -132,15 +132,13 @@ export const uploadFile = async (req: Request, res: Response) => {
 
  */
 
-export const getUploadMetadata = async (req: Request, res: Response) => {
+export const getUploadMetadata = async (req: AuthenticatedRequest, res: Response) => {
 
   try {
 
     const { id } = req.params;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-    const user = (req as any).user;
+    const user = req.user;
 
     const upload = await prisma.upload.findUnique({ where: { id: parseInt(id) } });
 
@@ -190,7 +188,7 @@ export const getUploadMetadata = async (req: Request, res: Response) => {
 
 // Helper to get patient ID for user
 
-async function getPatientIdForUser(userId: any): Promise<number | null> {
+async function getPatientIdForUser(userId: number | string | null | undefined): Promise<number | null> {
 
   if (!userId) return null;
 

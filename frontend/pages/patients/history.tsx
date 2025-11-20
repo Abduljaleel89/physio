@@ -42,7 +42,7 @@ export default function PatientHistoryPage() {
   if (authLoading || loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-64"><div className="text-gray-500">Loading…</div></div>
+        <div className="flex justify-center items-center h-64"><div className="text-gray-500 dark:text-gray-400">Loading…</div></div>
       </Layout>
     );
   }
@@ -53,39 +53,39 @@ export default function PatientHistoryPage() {
     <Layout>
       <div className="px-4 sm:px-0">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">My Completions History</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">My Completions History</h1>
           {summary && (
-            <p className="text-gray-600">Total completions: {summary.totalCompletions}</p>
+            <p className="text-gray-600 dark:text-gray-400">Total completions: {summary.totalCompletions}</p>
           )}
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-            <div className="text-sm text-red-700">{error}</div>
+          <div className="mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
+            <div className="text-sm text-red-800 dark:text-red-300 font-medium">{error}</div>
           </div>
         )}
 
-        <form onSubmit={apply} className="mb-4 bg-white rounded-xl shadow-lg border border-gray-200 p-4 flex items-end space-x-3">
+        <form onSubmit={apply} className="mb-4 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-4 flex items-end space-x-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start</label>
-            <input type="date" value={start} onChange={(e)=> setStart(e.target.value)} className="px-3 py-2 border rounded-lg" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start</label>
+            <input type="date" value={start} onChange={(e)=> setStart(e.target.value)} className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End</label>
-            <input type="date" value={end} onChange={(e)=> setEnd(e.target.value)} className="px-3 py-2 border rounded-lg" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End</label>
+            <input type="date" value={end} onChange={(e)=> setEnd(e.target.value)} className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" />
           </div>
           <div>
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">Apply</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600">Apply</button>
           </div>
         </form>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-4">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={daily.map(d => ({ ...d, label: format(new Date(d.date), 'MMM dd') }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" />
-                <YAxis allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-600" />
+                <XAxis dataKey="label" className="text-sm text-gray-600 dark:text-gray-400" />
+                <YAxis allowDecimals={false} className="text-sm text-gray-600 dark:text-gray-400" />
                 <Tooltip />
                 <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2} />
               </LineChart>

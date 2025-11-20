@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { Role } from "@prisma/client";
+import { Role, TherapyPlanStatus, NotificationType } from "@prisma/client";
 import { prisma } from "../prisma";
 import { AuthenticatedRequest, requireAdmin } from "../middleware/authMiddleware";
 import { hashPassword } from "../lib/password";
@@ -294,14 +294,29 @@ export async function assignDoctorToPatient(req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    // Check if assignment already exists via active therapy plan
-    const existingPlan = await prisma.therapyPlan.findFirst({
+    // Check if patient already has any active assignments
+    const existingAssignments = await prisma.therapyPlan.findMany({
       where: {
         patientId: parseInt(patientId),
-        doctorId: parseInt(doctorId),
-        status: { not: "COMPLETED" },
+        status: {
+          notIn: [TherapyPlanStatus.COMPLETED, TherapyPlanStatus.CANCELLED],
+        },
+      },
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
       },
     });
+
+    // Check if the same doctor is already assigned
+    const existingPlan = existingAssignments.find(
+      (plan) => plan.doctorId === parseInt(doctorId)
+    );
 
     if (existingPlan) {
       res.json({
@@ -309,6 +324,18 @@ export async function assignDoctorToPatient(req: AuthenticatedRequest, res: Resp
         data: {
           message: "Doctor is already assigned to this patient via an active therapy plan",
           therapyPlan: existingPlan,
+        },
+      });
+      return;
+    }
+
+    // If patient has other active assignments, return info to prompt unassign
+    if (existingAssignments.length > 0) {
+      res.status(400).json({
+        success: false,
+        error: "Patient already has assigned doctor(s). Please unassign existing doctor(s) first.",
+        data: {
+          existingAssignments,
         },
       });
       return;
@@ -336,9 +363,62 @@ export async function assignDoctorToPatient(req: AuthenticatedRequest, res: Resp
             },
           },
         },
-        doctor: true,
+        doctor: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
+
+    // Create notifications for both doctor and patient
+    try {
+      // Notification for the doctor
+      if (therapyPlan.doctor.user?.id) {
+        await prisma.notification.create({
+          data: {
+            userId: therapyPlan.doctor.user.id,
+            title: "New Patient Assignment",
+            message: `You have been assigned to patient ${patient.firstName} ${patient.lastName} (${patient.regNumber}). A new therapy plan has been created.`,
+            type: NotificationType.SUCCESS,
+            payload: JSON.stringify({
+              therapyPlanId: therapyPlan.id,
+              patientId: patient.id,
+              patientName: `${patient.firstName} ${patient.lastName}`,
+              patientRegNumber: patient.regNumber,
+            }),
+            read: false,
+          },
+        });
+      }
+
+      // Notification for the patient
+      if (therapyPlan.patient.user?.id) {
+        await prisma.notification.create({
+          data: {
+            userId: therapyPlan.patient.user.id,
+            title: "Doctor Assigned",
+            message: `Dr. ${doctor.firstName} ${doctor.lastName} has been assigned as your physiotherapist. A new therapy plan has been created for you.`,
+            type: NotificationType.SUCCESS,
+            payload: JSON.stringify({
+              therapyPlanId: therapyPlan.id,
+              doctorId: doctor.id,
+              doctorName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+              doctorSpecialization: doctor.specialization,
+            }),
+            read: false,
+          },
+        });
+      }
+    } catch (notificationError) {
+      // Log error but don't fail the assignment if notifications fail
+      console.error("Error creating notifications:", notificationError);
+    }
 
     res.status(201).json({
       success: true,
@@ -398,6 +478,129 @@ export async function getDoctors(req: AuthenticatedRequest, res: Response): Prom
 }
 
 /**
+ * Unassign doctor from patient
+ * POST /api/admin/unassign-doctor
+ * Requires: ADMIN
+ */
+export async function unassignDoctorFromPatient(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+      return;
+    }
+
+    const { patientId, doctorId } = req.body;
+    
+    console.log('Unassign request received:', { patientId, doctorId, body: req.body });
+
+    if (!patientId || !doctorId) {
+      console.log('Missing patientId or doctorId');
+      res.status(400).json({
+        success: false,
+        error: "Patient ID and Doctor ID are required",
+      });
+      return;
+    }
+
+    console.log('Parsing IDs - patientId:', patientId, '->', parseInt(patientId), 'doctorId:', doctorId, '->', parseInt(doctorId));
+
+    // Verify patient exists
+    console.log('Looking up patient:', parseInt(patientId));
+    const patient = await prisma.patient.findUnique({
+      where: { id: parseInt(patientId) },
+      include: { user: true },
+    });
+
+    if (!patient) {
+      console.log('Patient not found');
+      res.status(404).json({
+        success: false,
+        error: "Patient not found",
+      });
+      return;
+    }
+    console.log('Patient found:', patient.firstName, patient.lastName);
+
+    // Verify doctor exists
+    console.log('Looking up doctor:', parseInt(doctorId));
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: parseInt(doctorId) },
+      include: { user: true },
+    });
+
+    if (!doctor) {
+      console.log('Doctor not found');
+      res.status(404).json({
+        success: false,
+        error: "Doctor not found",
+      });
+      return;
+    }
+    console.log('Doctor found:', doctor.firstName, doctor.lastName);
+
+    // Find active therapy plans for this patient-doctor assignment
+    // Look for plans that are not COMPLETED or CANCELLED (i.e., ACTIVE, PAUSED, or DRAFT)
+    console.log('Finding active therapy plans for patient:', parseInt(patientId), 'doctor:', parseInt(doctorId));
+    const activePlans = await prisma.therapyPlan.findMany({
+      where: {
+        patientId: parseInt(patientId),
+        doctorId: parseInt(doctorId),
+        status: {
+          notIn: [TherapyPlanStatus.COMPLETED, TherapyPlanStatus.CANCELLED],
+        },
+      },
+    });
+
+    console.log('Found active plans:', activePlans.length);
+
+    if (activePlans.length === 0) {
+      console.log('No active plans found, returning 404');
+      res.status(404).json({
+        success: false,
+        error: "No active assignment found between this patient and doctor",
+      });
+      return;
+    }
+
+    // Complete all active therapy plans to unassign
+    console.log('Updating therapy plans to COMPLETED');
+    const updateResult = await prisma.therapyPlan.updateMany({
+      where: {
+        patientId: parseInt(patientId),
+        doctorId: parseInt(doctorId),
+        status: {
+          notIn: [TherapyPlanStatus.COMPLETED, TherapyPlanStatus.CANCELLED],
+        },
+      },
+      data: {
+        status: TherapyPlanStatus.COMPLETED,
+        endDate: new Date(),
+      },
+    });
+
+    console.log('Updated plans count:', updateResult.count);
+
+    console.log('Successfully unassigned doctor');
+    res.json({
+      success: true,
+      data: {
+        message: "Doctor unassigned from patient successfully",
+        unassignedPlans: updateResult.count,
+      },
+    });
+  } catch (error) {
+    console.error("Unassign doctor error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+}
+
+/**
  * Get all patients
  * GET /api/admin/patients
  * Requires: ADMIN
@@ -422,7 +625,11 @@ export async function getPatients(req: AuthenticatedRequest, res: Response): Pro
           },
         },
         therapyPlans: {
-          include: {
+          select: {
+            id: true,
+            doctorId: true,
+            status: true,
+            name: true,
             doctor: {
               select: {
                 id: true,
@@ -432,7 +639,9 @@ export async function getPatients(req: AuthenticatedRequest, res: Response): Pro
             },
           },
           where: {
-            status: { not: "COMPLETED" },
+            status: {
+              notIn: [TherapyPlanStatus.COMPLETED, TherapyPlanStatus.CANCELLED],
+            },
           },
         },
       },
@@ -656,6 +865,79 @@ export async function resetUserPassword(req: AuthenticatedRequest, res: Response
     });
   } catch (error) {
     console.error("Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+}
+
+/**
+ * Delete a user (Admin only)
+ * DELETE /api/admin/users/:id
+ * Requires: ADMIN
+ */
+export async function deleteUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
+      return;
+    }
+
+    const userId = parseInt(req.params.id);
+
+    if (isNaN(userId)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid user ID",
+      });
+      return;
+    }
+
+    // Find the user to delete
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        patientProfile: true,
+        doctorProfile: true,
+      },
+    });
+
+    if (!userToDelete) {
+      res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+      return;
+    }
+
+    // Prevent deleting ADMIN users
+    if (userToDelete.role === Role.ADMIN) {
+      res.status(403).json({
+        success: false,
+        error: "Cannot delete ADMIN users",
+      });
+      return;
+    }
+
+    // Delete the user (cascade will automatically delete associated Patient/Doctor profiles)
+    // The schema has onDelete: Cascade on the User relation, so profiles will be deleted automatically
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        message: "User deleted successfully",
+        deletedUserId: userId,
+      },
+    });
+  } catch (error) {
+    console.error("Delete user error:", error);
     res.status(500).json({
       success: false,
       error: "Internal server error",

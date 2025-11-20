@@ -38,11 +38,15 @@ export async function getAdherenceAnalytics(req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    const where: any = { completedAt: { gte: start, lte: end }, undone: false };
+    const where: {
+      completedAt: { gte: Date; lte: Date };
+      undone: boolean;
+      therapyPlanExerciseId?: { in: number[] };
+    } = { completedAt: { gte: start, lte: end }, undone: false };
 
     if (therapyPlanId) {
       const planExercises = await prisma.therapyPlanExercise.findMany({ where: { therapyPlanId }, select: { id: true } });
-      where.therapyPlanExerciseId = { in: planExercises.map((e) => e.id) };
+      where.therapyPlanExerciseId = { in: planExercises.map((e: { id: number }) => e.id) };
     }
 
     const completionEvents = await prisma.completionEvent.findMany({
@@ -69,7 +73,7 @@ export async function getAdherenceAnalytics(req: AuthenticatedRequest, res: Resp
 
     const dailyBuckets: Record<string, number> = {};
 
-    completionEvents.forEach((event) => {
+    completionEvents.forEach((event: typeof completionEvents[0]) => {
       const plan = event.therapyPlanExercise.therapyPlan;
       const exercise = event.therapyPlanExercise.exercise;
       const planId = plan.id;

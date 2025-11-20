@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Role, TherapyPlanStatus } from "@prisma/client";
+import { Role, TherapyPlanStatus, NotificationType } from "@prisma/client";
 import { prisma } from "../prisma";
 import { AuthenticatedRequest, requireStaff } from "../middleware/authMiddleware";
 
@@ -232,11 +232,30 @@ export async function addExerciseToPlan(req: AuthenticatedRequest, res: Response
     const planId = parseInt(req.params.id);
     const { exerciseId, order, reps, sets, duration, frequency, notes, name, description, difficulty } = req.body;
 
-    // Get therapy plan
+    // Get therapy plan with patient and doctor info
     const therapyPlan = await prisma.therapyPlan.findUnique({
       where: { id: planId },
       include: {
-        doctor: true,
+        doctor: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
+        patient: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -310,6 +329,90 @@ export async function addExerciseToPlan(req: AuthenticatedRequest, res: Response
         createdBy: req.user.id,
       },
     });
+
+    // Create notifications for patient, admin, and receptionist
+    try {
+      const exerciseName = therapyPlanExercise.exercise?.name || 'an exercise';
+      const patientName = `${therapyPlan.patient.firstName} ${therapyPlan.patient.lastName}`;
+      const doctorName = `Dr. ${therapyPlan.doctor.firstName} ${therapyPlan.doctor.lastName}`;
+
+      // Notification for the patient
+      if (therapyPlan.patient.user?.id) {
+        await prisma.notification.create({
+          data: {
+            userId: therapyPlan.patient.user.id,
+            title: "New Exercise Assigned",
+            message: `${doctorName} has assigned "${exerciseName}" to your therapy plan. Please check your exercises.`,
+            type: NotificationType.SUCCESS,
+            payload: JSON.stringify({
+              therapyPlanId: planId,
+              therapyPlanExerciseId: therapyPlanExercise.id,
+              exerciseId: therapyPlanExercise.exerciseId,
+              exerciseName: exerciseName,
+              doctorName: doctorName,
+            }),
+            read: false,
+          },
+        });
+      }
+
+      // Notifications for all admins
+      const admins = await prisma.user.findMany({
+        where: { role: Role.ADMIN },
+        select: { id: true },
+      });
+      for (const admin of admins) {
+        await prisma.notification.create({
+          data: {
+            userId: admin.id,
+            title: "Exercise Assigned to Patient",
+            message: `${doctorName} assigned "${exerciseName}" to patient ${patientName} (${therapyPlan.patient.regNumber}).`,
+            type: NotificationType.INFO,
+            payload: JSON.stringify({
+              therapyPlanId: planId,
+              therapyPlanExerciseId: therapyPlanExercise.id,
+              exerciseId: therapyPlanExercise.exerciseId,
+              exerciseName: exerciseName,
+              patientId: therapyPlan.patient.id,
+              patientName: patientName,
+              doctorId: therapyPlan.doctor.id,
+              doctorName: doctorName,
+            }),
+            read: false,
+          },
+        });
+      }
+
+      // Notifications for all receptionists
+      const receptionists = await prisma.user.findMany({
+        where: { role: Role.RECEPTIONIST },
+        select: { id: true },
+      });
+      for (const receptionist of receptionists) {
+        await prisma.notification.create({
+          data: {
+            userId: receptionist.id,
+            title: "Exercise Assigned to Patient",
+            message: `${doctorName} assigned "${exerciseName}" to patient ${patientName} (${therapyPlan.patient.regNumber}).`,
+            type: NotificationType.INFO,
+            payload: JSON.stringify({
+              therapyPlanId: planId,
+              therapyPlanExerciseId: therapyPlanExercise.id,
+              exerciseId: therapyPlanExercise.exerciseId,
+              exerciseName: exerciseName,
+              patientId: therapyPlan.patient.id,
+              patientName: patientName,
+              doctorId: therapyPlan.doctor.id,
+              doctorName: doctorName,
+            }),
+            read: false,
+          },
+        });
+      }
+    } catch (notificationError) {
+      // Log error but don't fail the assignment if notifications fail
+      console.error("Error creating notifications:", notificationError);
+    }
 
     res.status(201).json({ success: true, data: { therapyPlanExercise, newVersion, message: "Exercise added and plan version bumped" } });
   } catch (error) {

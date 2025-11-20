@@ -64,7 +64,7 @@ export default function DoctorPatientsPage() {
   if (authLoading || loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-64"><div className="text-gray-500">Loading…</div></div>
+        <div className="flex justify-center items-center h-64"><div className="text-gray-500 dark:text-gray-400">Loading…</div></div>
       </Layout>
     );
   }
@@ -72,7 +72,7 @@ export default function DoctorPatientsPage() {
   if (!user || user.role !== 'PHYSIOTHERAPIST') {
     return (
       <Layout>
-        <div className="text-gray-600">This page is for physiotherapists.</div>
+        <div className="text-gray-600 dark:text-gray-400">This page is for physiotherapists.</div>
       </Layout>
     );
   }
@@ -82,8 +82,8 @@ export default function DoctorPatientsPage() {
       <div className="px-4 sm:px-0">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Patients</h1>
-            <p className="text-gray-600">Patients with therapy plans assigned to you</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-2">My Patients</h1>
+            <p className="text-gray-600 dark:text-gray-400">Patients with therapy plans assigned to you</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="relative">
@@ -91,9 +91,9 @@ export default function DoctorPatientsPage() {
                 placeholder="Search patients…" 
                 value={filter} 
                 onChange={(e)=> setFilter(e.target.value)} 
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
               />
-              <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -101,35 +101,35 @@ export default function DoctorPatientsPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-            <div className="text-sm text-red-700">{error}</div>
+          <div className="mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
+            <div className="text-sm text-red-800 dark:text-red-300 font-medium">{error}</div>
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700">
           {(filteredPatients.length === 0) ? (
-            <div className="p-12 text-center text-gray-500">
-              <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+              <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <p className="text-lg font-medium">No assigned patients found</p>
-              <p className="text-sm mt-1">Patients will appear here once therapy plans are assigned to you.</p>
+              <p className="text-lg font-medium text-gray-900 dark:text-gray-50">No assigned patients found</p>
+              <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">Patients will appear here once therapy plans are assigned to you.</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-100 dark:divide-slate-700">
               {filteredPatients.map((p:any) => (
-                <div key={p.id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div key={p.id} className="p-6 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-700 font-semibold text-sm">
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                          <span className="text-blue-700 dark:text-blue-300 font-semibold text-sm">
                             {p.firstName?.[0]?.toUpperCase() || ''}{p.lastName?.[0]?.toUpperCase() || ''}
                           </span>
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900 text-lg">{p.firstName} {p.lastName}</div>
-                          <div className="text-sm text-gray-500 mt-0.5">
+                          <div className="font-semibold text-gray-900 dark:text-gray-50 text-lg">{p.firstName} {p.lastName}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                             Patient ID: {p.id}
                             {p.regNumber && <span className="ml-2">• {p.regNumber}</span>}
                           </div>
@@ -138,8 +138,14 @@ export default function DoctorPatientsPage() {
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
                       <a 
+                        href={`/doctor/patients/${p.id}/history`} 
+                        className="px-4 py-2 bg-green-600 dark:bg-green-500 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 font-medium text-sm shadow-sm hover:shadow-md transition-all"
+                      >
+                        Patient History
+                      </a>
+                      <a 
                         href={`/doctor/patients/${p.id}`} 
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm shadow-sm hover:shadow-md transition-all"
+                        className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium text-sm shadow-sm hover:shadow-md transition-all"
                       >
                         View Progress
                       </a>

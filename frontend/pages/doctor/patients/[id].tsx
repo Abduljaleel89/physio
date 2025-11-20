@@ -105,7 +105,7 @@ export default function PatientProgressPage() {
   if (authLoading || loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center h-64"><div className="text-gray-500">Loading…</div></div>
+        <div className="flex justify-center items-center h-64"><div className="text-gray-500 dark:text-gray-400">Loading…</div></div>
       </Layout>
     );
   }
@@ -113,7 +113,7 @@ export default function PatientProgressPage() {
   if (!user || user.role !== 'PHYSIOTHERAPIST') {
     return (
       <Layout>
-        <div className="text-gray-600">For physiotherapists only.</div>
+        <div className="text-gray-600 dark:text-gray-400">For physiotherapists only.</div>
       </Layout>
     );
   }
@@ -124,39 +124,39 @@ export default function PatientProgressPage() {
           <div className="mb-6 flex items-center justify-between">
           <div>
             <div className="flex items-center space-x-3">
-              <button onClick={()=> window.history.back()} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <button onClick={()=> window.history.back()} className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
               <div>
-                <h1 className="text-4xl font-bold text-gray-900">Patient Progress</h1>
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50">Patient Progress</h1>
                 {patient && (
-                  <p className="text-gray-600 mt-1">
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
                     {patient.firstName} {patient.lastName}
-                    {patient.regNumber && <span className="ml-2 text-sm text-gray-500">({patient.regNumber})</span>}
+                    {patient.regNumber && <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">({patient.regNumber})</span>}
                   </p>
                 )}
               </div>
             </div>
           </div>
-          <button onClick={()=> setShowAssign(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md hover:shadow-lg transition-all">
+          <button onClick={()=> setShowAssign(true)} className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium shadow-md hover:shadow-lg transition-all">
             Create Therapy Plan
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Adherence Overview (Last 14 days)</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-4">Adherence Overview (Last 14 days)</h2>
           {chartData.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
-                  <XAxis dataKey="date" className="text-sm text-gray-600" />
-                  <YAxis allowDecimals={false} className="text-sm text-gray-600" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-600" />
+                  <XAxis dataKey="date" className="text-sm text-gray-600 dark:text-gray-400" />
+                  <YAxis allowDecimals={false} className="text-sm text-gray-600 dark:text-gray-400" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
+                      backgroundColor: 'rgb(255 255 255 / var(--tw-bg-opacity, 1))',
                       borderColor: '#e5e7eb',
                       borderRadius: '0.5rem',
                       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
@@ -169,54 +169,54 @@ export default function PatientProgressPage() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <p>No adherence data available for this patient yet.</p>
               <p className="text-sm mt-2">Data will appear once the patient starts completing exercises.</p>
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-          <div className="p-4 border-b flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Therapy Plans</h2>
-            <button onClick={()=> setShowAssign(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">Create Plan</button>
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">Therapy Plans</h2>
+            <button onClick={()=> setShowAssign(true)} className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 text-sm font-medium">Create Plan</button>
           </div>
           <div className="p-4">
             {plans.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <p>No therapy plans assigned to this patient yet.</p>
                 <p className="text-sm mt-2">Create a plan to get started.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {plans.map((pl:any)=> (
-                  <div key={pl.id} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
+                  <div key={pl.id} className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 transition-colors bg-white dark:bg-slate-700">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="font-semibold text-gray-900">{pl.name || 'Therapy Plan'}</h3>
-                          <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded-full">v{pl.version || 1}</span>
-                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                            pl.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                            pl.status === 'COMPLETED' ? 'bg-gray-100 text-gray-800' :
-                            'bg-yellow-100 text-yellow-800'
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-50">{pl.name || 'Therapy Plan'}</h3>
+                          <span className="text-xs font-medium px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-700">v{pl.version || 1}</span>
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full border ${
+                            pl.status === 'ACTIVE' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700' :
+                            pl.status === 'COMPLETED' ? 'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700' :
+                            'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700'
                           }`}>
                             {pl.status || 'ACTIVE'}
                           </span>
                         </div>
                         {pl.exercises?.length ? (
-                          <div className="text-sm text-gray-600 mb-2">
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                             <span className="font-medium">{pl.exercises.length}</span> {pl.exercises.length === 1 ? 'exercise' : 'exercises'}
                           </div>
                         ) : (
-                          <div className="text-sm text-gray-500 mb-2">No exercises in this plan</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">No exercises in this plan</div>
                         )}
                         {pl.description && (
-                          <p className="text-sm text-gray-600 mt-2">{pl.description}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{pl.description}</p>
                         )}
                       </div>
                       <div className="ml-4">
-                        <a href={`/therapy-plans/detail?id=${pl.id}`} className="px-3 py-1.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                        <a href={`/therapy-plans/detail?id=${pl.id}`} className="px-3 py-1.5 text-sm font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
                           View Details
                         </a>
                       </div>
@@ -230,16 +230,16 @@ export default function PatientProgressPage() {
 
         {showAssign && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-              <div className="p-4 border-b"><h2 className="text-xl font-semibold">Assign Therapy Plan</h2></div>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full">
+              <div className="p-4 border-b border-gray-200 dark:border-slate-700"><h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">Assign Therapy Plan</h2></div>
               <form onSubmit={assignPlan} className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Plan name</label>
-                  <input className="w-full px-3 py-2 border rounded-lg" value={assignName} onChange={(e)=> setAssignName(e.target.value)} placeholder="e.g., Back Rehab" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan name</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" value={assignName} onChange={(e)=> setAssignName(e.target.value)} placeholder="e.g., Back Rehab" />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <button type="button" onClick={()=> setShowAssign(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
-                  <button type="submit" disabled={assigning} className="px-4 py-2 bg-blue-600 text-white rounded-lg">{assigning ? 'Assigning…' : 'Assign'}</button>
+                  <button type="button" onClick={()=> setShowAssign(false)} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600">Cancel</button>
+                  <button type="submit" disabled={assigning} className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50">{assigning ? 'Assigning…' : 'Assign'}</button>
                 </div>
               </form>
             </div>

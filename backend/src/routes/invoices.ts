@@ -1,6 +1,7 @@
 import express from "express";
 import * as invoicesController from "../controllers/invoicesController";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { uploadMiddleware } from "../lib/multer";
 
 const router = express.Router();
 
@@ -38,6 +39,9 @@ router.post("/:id/void", authMiddleware, invoicesController.voidInvoice);
  * @access  Private (Admin or Receptionist)
  */
 router.post("/:id/send-email", authMiddleware, invoicesController.sendInvoiceEmail);
+router.get("/:id", authMiddleware, invoicesController.getInvoice);
+router.post("/:id/upload-payment-proof", authMiddleware, uploadMiddleware.single("file"), invoicesController.uploadPaymentProof);
+router.post("/:id/review-payment-proof", authMiddleware, invoicesController.reviewPaymentProof);
 
 export default router;
 

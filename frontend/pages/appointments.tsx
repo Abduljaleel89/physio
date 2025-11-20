@@ -251,7 +251,7 @@ export default function Appointments() {
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">Loading...</div>
+          <div className="text-gray-500 dark:text-gray-400">Loading...</div>
         </div>
       </Layout>
     );
@@ -268,8 +268,8 @@ export default function Appointments() {
       <div className="px-4 sm:px-0">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Appointments</h1>
-            <p className="text-gray-600">Calendar view and quick scheduling</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-2">Appointments</h1>
+            <p className="text-gray-600 dark:text-gray-400">Calendar view and quick scheduling</p>
           </div>
           <button
             onClick={() => {
@@ -285,17 +285,17 @@ export default function Appointments() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+          <div className="mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4">
             <div className="flex">
-              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-              <div className="ml-3 text-sm text-red-700">{error}</div>
+              <div className="ml-3 text-sm text-red-800 dark:text-red-300 font-medium">{error}</div>
             </div>
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-3">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-3">
           <AppointmentCalendar
             events={events}
             defaultView={view}
@@ -310,17 +310,17 @@ export default function Appointments() {
 
         {selectedSlot && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">{user?.role === 'PATIENT' ? 'Request Appointment' : 'Create Appointment'}</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full">
+              <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">{user?.role === 'PATIENT' ? 'Request Appointment' : 'Create Appointment'}</h2>
               </div>
               <form onSubmit={onCreate} className="p-4 space-y-4">
                 {user?.role !== 'PATIENT' ? (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient</label>
                       <select
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50"
                         value={patientId || ''}
                         onChange={(e) => setPatientId(parseInt(e.target.value))}
                       >
@@ -331,9 +331,9 @@ export default function Appointments() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Doctor</label>
                       <select
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50"
                         value={doctorId || ''}
                         onChange={(e) => setDoctorId(parseInt(e.target.value))}
                       >
@@ -347,9 +347,9 @@ export default function Appointments() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Doctor</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Doctor</label>
                       <select
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50"
                         value={doctorId || ''}
                         onChange={(e) => setDoctorId(parseInt(e.target.value))}
                       >
@@ -361,42 +361,42 @@ export default function Appointments() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
                         <input
                           type="date"
-                          className="w-full px-3 py-2 border rounded-lg"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50"
                           value={dateStr}
                           onChange={(e)=> setDateStr(e.target.value)}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
                         <input
                           type="time"
-                          className="w-full px-3 py-2 border rounded-lg"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50"
                           value={timeStr}
                           onChange={(e) => setTimeStr(e.target.value)}
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                      <textarea className="w-full px-3 py-2 border rounded-lg" rows={3} value={reason} onChange={(e)=> setReason(e.target.value)} />
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
+                      <textarea className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" rows={3} value={reason} onChange={(e)=> setReason(e.target.value)} />
                     </div>
                   </>
                 )}
                 {/* Common fields */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start</label>
-                  <input type="text" readOnly className="w-full px-3 py-2 border rounded-lg bg-gray-50" value={selectedSlot.start.toLocaleString()} />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start</label>
+                  <input type="text" readOnly className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-gray-50" value={selectedSlot.start.toLocaleString()} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                  <input type="number" min={15} step={15} value={createDuration} onChange={(e) => setCreateDuration(parseInt(e.target.value || '60'))} className="w-full px-3 py-2 border rounded-lg" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (minutes)</label>
+                  <input type="number" min={15} step={15} value={createDuration} onChange={(e) => setCreateDuration(parseInt(e.target.value || '60'))} className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" />
                 </div>
                 <div className="flex justify-end space-x-3 pt-2">
-                  <button type="button" onClick={() => setSelectedSlot(null)} className="px-4 py-2 border rounded-lg text-gray-700">Cancel</button>
-                  <button type="submit" disabled={creating} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">{creating ? (user?.role === 'PATIENT' ? 'Requesting…' : 'Creating…') : (user?.role === 'PATIENT' ? 'Request' : 'Create')}</button>
+                  <button type="button" onClick={() => setSelectedSlot(null)} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600">Cancel</button>
+                  <button type="submit" disabled={creating} className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50">{creating ? (user?.role === 'PATIENT' ? 'Requesting…' : 'Creating…') : (user?.role === 'PATIENT' ? 'Request' : 'Create')}</button>
                 </div>
               </form>
             </div>
@@ -405,34 +405,34 @@ export default function Appointments() {
 
         {editAppt && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Edit Appointment</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full">
+              <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">Edit Appointment</h2>
               </div>
               <form onSubmit={onSaveEdit} className="p-4 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" value={editDate} onChange={(e)=> setEditDate(e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                    <input type="date" value={editDate} onChange={(e)=> setEditDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                    <input type="time" value={editTime} onChange={(e)=> setEditTime(e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                    <input type="time" value={editTime} onChange={(e)=> setEditTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                  <input type="number" min={15} step={15} value={editDuration} onChange={(e)=> setEditDuration(parseInt(e.target.value||'60'))} className="w-full px-3 py-2 border rounded-lg" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (minutes)</label>
+                  <input type="number" min={15} step={15} value={editDuration} onChange={(e)=> setEditDuration(parseInt(e.target.value||'60'))} className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes / Cancel Reason</label>
-                  <textarea rows={3} value={editReason} onChange={(e)=> setEditReason(e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes / Cancel Reason</label>
+                  <textarea rows={3} value={editReason} onChange={(e)=> setEditReason(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-50" />
                 </div>
                 <div className="flex justify-between pt-2">
-                  <button type="button" onClick={onCancelAppt} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Cancel Appointment</button>
+                  <button type="button" onClick={onCancelAppt} className="px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600">Cancel Appointment</button>
                   <div className="space-x-3">
-                    <button type="button" onClick={()=> setEditAppt(null)} className="px-4 py-2 border rounded-lg text-gray-700">Close</button>
-                    <button type="submit" disabled={creating} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">{creating ? 'Saving…' : 'Save'}</button>
+                    <button type="button" onClick={()=> setEditAppt(null)} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600">Close</button>
+                    <button type="submit" disabled={creating} className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50">{creating ? 'Saving…' : 'Save'}</button>
                   </div>
                 </div>
               </form>

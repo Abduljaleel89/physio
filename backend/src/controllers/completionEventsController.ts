@@ -16,8 +16,7 @@ const storage = new LocalStorageAdapter({
  */
 export async function createCompletionEvent(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const authUser = (req as any).user;
+    const authUser = req.user;
     const patientId = parseInt(req.params.id || req.params.patientId);
     
     if (!authUser) {
@@ -28,11 +27,8 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    // ownership check: patient can only create for themselves unless role elevated
-    if (authUser.role === 'PATIENT' && authUser.id !== patientId && authUser.userId !== patientId) {
-      res.status(403).json({ success: false, error: 'Forbidden' });
-      return;
-    }
+    // Note: We'll verify patient ownership after fetching the patient record below
+    // This early check is skipped to allow fetching the patient first
 
     let { exerciseId, therapyPlanId, therapyPlanExerciseId, painRating, painLevel, note, notes, mediaUploadId: bodyMediaUploadId } = req.body;
 
@@ -117,10 +113,9 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
     let mediaUploadId: string | null = bodyMediaUploadId ?? null;
 
     // If file uploaded in the request (combined flow), save to storage and create Upload record
-    if ((req as any).file) {
+    if (req.file) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const multerFile = (req as any).file as Express.Multer.File;
+        const multerFile = req.file as Express.Multer.File;
         const stored = await storage.saveFile(multerFile, { uploadedBy: authUser.id?.toString() ?? authUser.userId?.toString() ?? null });
         
         const upload = await prisma.upload.create({
@@ -196,13 +191,45 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
       try {
         const doctor = await prisma.doctor.findUnique({ where: { id: therapyPlanExercise.therapyPlan.doctorId } });
         if (doctor?.userId) {
+          const exerciseName = therapyPlanExercise.exercise?.name || 'an exercise';
+          const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          
+          // Build notification message with feedback details
+          let messageParts = [`Patient ${patient.firstName} ${patient.lastName} completed "${exerciseName}" today.`];
+          const feedbackParts: string[] = [];
+          
+          if (completionEvent.painLevel !== null && completionEvent.painLevel !== undefined) {
+            feedbackParts.push(`Pain Level: ${completionEvent.painLevel}/10`);
+          }
+          if (completionEvent.satisfaction !== null && completionEvent.satisfaction !== undefined) {
+            feedbackParts.push(`Satisfaction: ${completionEvent.satisfaction}/5`);
+          }
+          if (completionEvent.notes) {
+            feedbackParts.push(`Notes: ${completionEvent.notes}`);
+          }
+          
+          if (feedbackParts.length > 0) {
+            messageParts.push(feedbackParts.join(' | '));
+          }
+          
           await prisma.notification.create({
             data: {
               userId: doctor.userId,
               title: "Exercise Completed",
-              message: `Patient ${patient.firstName} ${patient.lastName} completed an exercise`,
-              type: NotificationType.INFO,
-              payload: JSON.stringify({ completionId: completionEvent.id, patientId }),
+              message: messageParts.join('\n'),
+              type: NotificationType.SUCCESS,
+              payload: JSON.stringify({ 
+                completionId: completionEvent.id, 
+                patientId,
+                exerciseId: therapyPlanExercise.exerciseId,
+                exerciseName: exerciseName,
+                therapyPlanId: therapyPlanExercise.therapyPlanId,
+                therapyPlanExerciseId: therapyPlanExercise.id,
+                completedAt: completionEvent.completedAt,
+                painLevel: completionEvent.painLevel,
+                satisfaction: completionEvent.satisfaction,
+                notes: completionEvent.notes,
+              }),
               read: false,
             },
           });
@@ -217,8 +244,8 @@ export async function createCompletionEvent(req: AuthenticatedRequest, res: Resp
               if (doctorUser) {
                 await emailLib.sendNotificationEmail(
                   doctorUser.email,
-                  'Patient completed an exercise',
-                  `<p>Patient ${patient.firstName} ${patient.lastName} completed exercise</p>`
+                  'Patient completed an exercise today',
+                  `<p>Patient ${patient.firstName} ${patient.lastName} completed "${exerciseName}" today (${today}).</p>`
                 ).catch(() => null);
               }
             }

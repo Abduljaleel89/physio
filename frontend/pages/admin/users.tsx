@@ -17,6 +17,8 @@ export default function AdminUsersPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [resettingPassword, setResettingPassword] = useState<number | null>(null);
   const [resetPasswordResult, setResetPasswordResult] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -222,6 +224,46 @@ export default function AdminUsersPage() {
       setResettingPassword(null);
     }
   };
+
+  const handleDeleteUser = async (userId: number, email: string) => {
+    if (!confirm(`Are you sure you want to delete user ${email}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await adminApi.deleteUser(userId);
+      if (response.success) {
+        setSuccess('User deleted successfully!');
+        setSelectedUser(null);
+        loadUsers();
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to delete user');
+    }
+  };
+
+  // Filter users based on search query
+  const filteredUsers = users.filter((userItem) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const email = userItem.email?.toLowerCase() || '';
+    const role = userItem.role?.toLowerCase() || '';
+    const firstName = userItem.patientProfile?.firstName?.toLowerCase() || userItem.doctorProfile?.firstName?.toLowerCase() || '';
+    const lastName = userItem.patientProfile?.lastName?.toLowerCase() || userItem.doctorProfile?.lastName?.toLowerCase() || '';
+    const regNumber = userItem.patientProfile?.regNumber?.toLowerCase() || '';
+    const specialization = userItem.doctorProfile?.specialization?.toLowerCase() || '';
+    
+    return email.includes(query) || 
+           role.includes(query) || 
+           firstName.includes(query) || 
+           lastName.includes(query) ||
+           regNumber.includes(query) ||
+           specialization.includes(query);
+  });
 
   if (authLoading || loading) {
     return (
@@ -601,61 +643,119 @@ export default function AdminUsersPage() {
 
         <div className="card">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">All Users</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">All Users</h2>
+              <div className="relative w-full sm:w-64">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  className="input-field pl-10 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="px-6 py-12 text-center">
-              <p className="text-gray-500 dark:text-gray-400">No users found</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                {users.length === 0 ? 'No users found' : 'No users match your search'}
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-slate-700">
-              {users.map((userItem) => (
-                <div key={userItem.id} className="px-4 sm:px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{userItem.email}</h3>
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
-                          {userItem.role}
-                        </span>
+              {filteredUsers.map((userItem) => {
+                const isSelected = selectedUser?.id === userItem.id;
+                return (
+                  <div
+                    key={userItem.id}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedUser(null);
+                      } else {
+                        setSelectedUser(userItem);
+                      }
+                    }}
+                    className={`px-4 sm:px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                      isSelected ? 'bg-primary-50 dark:bg-primary-900/20 border-l-4 border-primary-500' : ''
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{userItem.email}</h3>
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
+                            {userItem.role}
+                          </span>
+                          {isSelected && (
+                            <span className="text-xs text-primary-600 dark:text-primary-400 font-medium">
+                              • Selected
+                            </span>
+                          )}
+                        </div>
+                        {userItem.patientProfile && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {userItem.patientProfile.firstName} {userItem.patientProfile.lastName} - Reg: {userItem.patientProfile.regNumber}
+                          </p>
+                        )}
+                        {userItem.doctorProfile && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Dr. {userItem.doctorProfile.firstName} {userItem.doctorProfile.lastName}
+                            {userItem.doctorProfile.specialization && ` - ${userItem.doctorProfile.specialization}`}
+                          </p>
+                        )}
                       </div>
-                      {userItem.patientProfile && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {userItem.patientProfile.firstName} {userItem.patientProfile.lastName} - Reg: {userItem.patientProfile.regNumber}
-                        </p>
-                      )}
-                      {userItem.doctorProfile && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Dr. {userItem.doctorProfile.firstName} {userItem.doctorProfile.lastName}
-                          {userItem.doctorProfile.specialization && ` - ${userItem.doctorProfile.specialization}`}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-end gap-2 sm:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
-                      <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
-                        Created: {new Date(userItem.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap order-1 sm:order-2 w-full sm:w-auto">
-                        <button
-                          onClick={() => handleEdit(userItem)}
-                          className="px-3 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors whitespace-nowrap flex-shrink-0"
-                          type="button"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleResetPassword(userItem.id)}
-                          disabled={resettingPassword === userItem.id}
-                          className="px-3 py-2 text-sm font-medium text-white bg-orange-600 dark:bg-orange-500 rounded-lg hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
-                          type="button"
-                        >
-                          {resettingPassword === userItem.id ? 'Resetting...' : 'Reset Password'}
-                        </button>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-end gap-2 sm:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
+                        <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
+                          Created: {new Date(userItem.createdAt).toLocaleDateString()}
+                        </div>
+                        {isSelected && (
+                          <div className="flex items-center gap-2 flex-wrap order-1 sm:order-2 w-full sm:w-auto" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                handleEdit(userItem);
+                                setSelectedUser(null);
+                              }}
+                              className="px-3 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors whitespace-nowrap flex-shrink-0 shadow-md"
+                              type="button"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleResetPassword(userItem.id);
+                                setSelectedUser(null);
+                              }}
+                              disabled={resettingPassword === userItem.id}
+                              className="px-3 py-2 text-sm font-medium text-white bg-orange-600 dark:bg-orange-500 rounded-lg hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 shadow-md"
+                              type="button"
+                            >
+                              🔑 {resettingPassword === userItem.id ? 'Resetting...' : 'Reset Password'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(userItem.id, userItem.email)}
+                              className="px-3 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-500 rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors whitespace-nowrap flex-shrink-0 shadow-md"
+                              type="button"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        )}
+                        {!isSelected && (
+                          <div className="text-xs text-gray-400 dark:text-gray-500 order-1 sm:order-2 italic">
+                            Click to select
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

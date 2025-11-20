@@ -60,6 +60,12 @@ export const uploadMiddleware = multer({
 
       'video/x-m4v',
 
+      'application/pdf', // For payment proof documents
+
+      'application/msword', // .doc
+
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+
     ];
 
     if (allowed.includes(file.mimetype)) {

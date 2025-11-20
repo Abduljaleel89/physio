@@ -21,6 +21,7 @@ model User {
   doctorProfile     Doctor?
   createdAppointments Appointment[] @relation("AppointmentCreatedBy")
   createdInvoices   Invoice[]       @relation("InvoiceCreatedBy")
+  reviewedPaymentProofs Invoice[]   @relation("InvoicePaymentProofReviewedBy")
   notifications     Notification[]
   auditLogs         AuditLog[]
   verificationTokens VerificationToken[]
@@ -244,6 +245,7 @@ model Upload {
   // Relations
   patient     Patient?  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   completionEvents CompletionEvent[]
+  invoicePaymentProof Invoice? @relation("InvoicePaymentProof")
 
   @@index([patientId])
   @@index([entityType, entityId])
@@ -256,13 +258,20 @@ model Invoice {
   appointmentId Int?            @unique
   createdById   Int
   invoiceNumber String          @unique
-  amount        Decimal         @db.Decimal(10, 2)
+  subtotal      Decimal         @db.Decimal(10, 2)  // Subtotal before tax
+  amount        Decimal         @db.Decimal(10, 2)   // Total amount including tax
   amountCents   Int?            // Amount in cents for precision
   currency      String          @default("USD")
+  taxable       Boolean         @default(false)      // Whether tax applies
+  taxRate       Decimal?        @db.Decimal(5, 2)    // Tax rate percentage (e.g., 10.00 for 10%)
+  taxAmount     Decimal?        @db.Decimal(10, 2)   // Tax amount
   status        InvoiceStatus   @default(PENDING)
   dueDate       DateTime?
   paidDate      DateTime?
   notes         String?
+  paymentProofUploadId Int?     @unique // Upload ID for payment proof
+  paymentProofReviewedAt DateTime?  // When payment proof was reviewed
+  paymentProofReviewedBy Int?   // User ID who reviewed the payment proof
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -271,11 +280,30 @@ model Invoice {
   therapyPlan  TherapyPlan?     @relation(fields: [therapyPlanId], references: [id], onDelete: SetNull)
   appointment  Appointment?     @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   createdBy    User             @relation("InvoiceCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  paymentProofUpload Upload?    @relation("InvoicePaymentProof", fields: [paymentProofUploadId], references: [id], onDelete: SetNull)
+  paymentProofReviewedByUser User? @relation("InvoicePaymentProofReviewedBy", fields: [paymentProofReviewedBy], references: [id], onDelete: SetNull)
+  lineItems    InvoiceLineItem[]
 
   @@index([invoiceNumber])
   @@index([status])
   @@index([dueDate])
   @@index([patientId])
+}
+
+model InvoiceLineItem {
+  id          Int       @id @default(autoincrement())
+  invoiceId   Int
+  description String
+  quantity    Decimal   @db.Decimal(10, 2) @default(1)
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  total       Decimal   @db.Decimal(10, 2)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
 }
 
 model Notification {

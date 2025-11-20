@@ -26,6 +26,13 @@ router.get("/users", authMiddleware, requireAdmin, adminController.listUsers);
 router.post("/assign-doctor", authMiddleware, requireAdmin, adminController.assignDoctorToPatient);
 
 /**
+ * @route   POST /api/admin/unassign-doctor
+ * @desc    Unassign doctor from patient
+ * @access  Private (Admin)
+ */
+router.post("/unassign-doctor", authMiddleware, requireAdmin, adminController.unassignDoctorFromPatient);
+
+/**
  * @route   GET /api/admin/doctors
  * @desc    Get all doctors
  * @access  Private (Admin)
@@ -52,6 +59,13 @@ router.put("/users/:id", authMiddleware, requireAdmin, adminController.updateUse
  * @access  Private (Admin)
  */
 router.post("/users/:id/reset-password", authMiddleware, requireAdmin, adminController.resetUserPassword);
+
+/**
+ * @route   DELETE /api/admin/users/:id
+ * @desc    Delete user
+ * @access  Private (Admin)
+ */
+router.delete("/users/:id", authMiddleware, requireAdmin, adminController.deleteUser);
 
 export default router;
 

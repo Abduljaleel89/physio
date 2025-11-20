@@ -226,9 +226,25 @@ export const adminApi = {
     const response = await api.post(`/admin/users/${userId}/reset-password`);
     return response.data;
   },
+  deleteUser: async (userId: number) => {
+    const response = await api.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
   assignDoctor: async (patientId: number, doctorId: number) => {
     const response = await api.post('/admin/assign-doctor', { patientId, doctorId });
     return response.data;
+  },
+  unassignDoctor: async (patientId: number, doctorId: number) => {
+    console.log('adminApi.unassignDoctor called with:', { patientId, doctorId });
+    try {
+      const response = await api.post('/admin/unassign-doctor', { patientId, doctorId });
+      console.log('adminApi.unassignDoctor response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('adminApi.unassignDoctor error:', error);
+      console.error('Error response:', error.response?.data);
+      throw error;
+    }
   },
   getDoctors: async () => {
     const response = await api.get('/admin/doctors');
@@ -254,6 +270,10 @@ export const analyticsApi = {
 export const invoicesApi = {
   list: async () => {
     const response = await api.get('/invoices');
+    return response.data;
+  },
+  get: async (id: number) => {
+    const response = await api.get(`/invoices/${id}`);
     return response.data;
   },
   create: async (data: any) => {
@@ -318,6 +338,10 @@ export const notificationsApi = {
 export const doctorApi = {
   myPatients: async () => {
     const response = await api.get('/doctor/my-patients');
+    return response.data;
+  },
+  getPatientHistory: async (patientId: number) => {
+    const response = await api.get(`/doctor/patients/${patientId}/history`);
     return response.data;
   },
 };
